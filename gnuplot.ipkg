@@ -1,15 +1,12 @@
-package profiler
+package gnuplot
 
 authors    = "stefan-hoeck"
+brief      = "Idris2 wrapper around gnuplot"
 version    = 0.0.1
 readme     = "README.md"
 license    = "BSD-3 Clause"
-brief      = "A simple profiling utility for Idris 2"
 
 sourcedir  = "src"
 depends    = base    >= 0.5.1
-           , prim
 
-modules = Profile
-        , Profile.Runner
-        , Profile.Types
+modules = Gnuplot
