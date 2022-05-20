@@ -1,40 +1,13 @@
 module Gnuplot.Terminal
 
-import Data.List
-import Data.String
-
+import Gnuplot.File
+import Gnuplot.Util
 
 %default total
 
 --------------------------------------------------------------------------------
---          Utilities
---------------------------------------------------------------------------------
-
-quote : String -> String
-quote = show
-
-bool : Bool -> String -> String
-bool True s = s
-bool False s = "no\{s}"
-
-mbool : Maybe Bool -> String -> Maybe String
-mbool mb s = map (`bool` s) mb
-
-asList : (a -> b) -> Maybe a -> List b
-asList f = toList . map f
-
---------------------------------------------------------------------------------
 --          Utility Types
 --------------------------------------------------------------------------------
-
-public export
-record FilePath where
-  constructor MkFilePath
-  path : String
-
-export
-Interpolation FilePath where
-  interpolate p = show p.path
 
 public export
 data FontSize = Tiny | Small | Medium | Large | Giant
@@ -131,9 +104,9 @@ fontSize f (PNG p t i c _) = PNG p t i c (Just f)
 pngToInfo : Terminal PNGTpe -> TermInfo
 pngToInfo (PNG p t i c fs) = MkTermInfo {
     options     = catMaybes [ Just "png"
-                            , mbool t "transparent"
-                            , mbool i "interlace"
-                            , mbool c "truecolor"
+                            , formatBoolM t "transparent"
+                            , formatBoolM i "interlace"
+                            , formatBoolM c "truecolor"
                             , map interpolate fs
                             ]
   , commands    = ["set output \{p}"]
@@ -211,7 +184,7 @@ namespace WXT
 
 wxtToInfo : Terminal WXTTpe -> TermInfo
 wxtToInfo (WXT t p) = MkTermInfo {
-    options     = catMaybes [Just "wxt", map quote t, mbool p "persist"]
+    options     = catMaybes [Just "wxt", map quote t, formatBoolM p "persist"]
   , commands    = []
   , interactive = True
   }
@@ -236,7 +209,10 @@ namespace X11
 
 x11ToInfo : Terminal X11Tpe -> TermInfo
 x11ToInfo (X11 t p) = MkTermInfo {
-    options     = catMaybes [Just "x11", map quote t, mbool p "persist"]
+    options     = catMaybes [ Just "x11"
+                            , map quote t
+                            , formatBoolM p "persist"
+                            ]
   , commands    = []
   , interactive = True
   }
