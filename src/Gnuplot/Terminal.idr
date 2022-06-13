@@ -139,12 +139,12 @@ embedFont p (PS f m c fs fo) = PS f m c (p :: fs) fo
 
 psToInfo : Terminal PSTpe -> TermInfo
 psToInfo (PS p m c fs fo) = MkTermInfo {
-    options     = concat [ ["postscript"]
-                         , asList interpolate m
-                         , asList (\case True => "color"; False => "monochrome") c
-                         , map (\f => "fontfile \{f}") fs
-                         , asList (\(n,s) => "font \{quote n} \{show s}") fo
-                         ]
+    options     = concatList [ ["postscript"]
+                             , asList interpolate m
+                             , asList (\case True => "color"; False => "monochrome") c
+                             , map (\f => "fontfile \{f}") fs
+                             , asList (\(n,s) => "font \{quote n} \{show s}") fo
+                             ]
   , commands    = ["set output \{p}"]
   , interactive = False
   }

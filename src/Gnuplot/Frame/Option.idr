@@ -1,13 +1,12 @@
 module Gnuplot.Frame.Option
 
-import Data.SortedMap as SM
 import Gnuplot.Util
 
 %default total
 
 ||| Every option represents an internal state in gnuplot.
 ||| It is altered with gnuplot's set command.
-||| The first field in 'T' is the name of the option
+||| The first field in is the name of the option
 ||| and the name of the according internal state in gnuplot.
 ||| 
 ||| Sometimes the addressed state is not explicitly mentioned
@@ -21,7 +20,7 @@ import Gnuplot.Util
 ||| in front of a stateful imperative one.
 ||| 
 ||| In case of a such a hidden state,
-||| we manage an identifier in the second field of 'T'.
+||| we manage an identifier in the second field of
 ||| It is mainly used for distinguishing different hidden states,
 ||| that are accessed by the same @set@ variable.
 ||| This second field may not contain valid gnuplot identifiers,
@@ -231,18 +230,13 @@ styleHistogram  = MkOption "style histogram" ""
 --------------------------------------------------------------------------------
 
 public export
-0 Plain : Type
-Plain = SortedMap Option (List String)
-
-public export
-record OptionSet (graph : Type) where
-  constructor MkOptionSet
-  plain : Plain
+0 Opts : Type
+Opts = SortedMap Option (List String)
 
 ||| The default options contain what we expect as default value in gnuplot.
 ||| We need an entry for every option that cannot be reset by @unset@.
 export
-deflt : Plain
+deflt : Opts
 deflt = fromList [
     (keyShow, [])
   , (sizeRatio, ["noratio"])
@@ -268,7 +262,7 @@ deflt = fromList [
   ]
 
 export
-initial : Plain
+initial : Opts
 initial = merge deflt $ fromList [
     (xData, [])
   , (yData, [])
@@ -279,10 +273,10 @@ initial = merge deflt $ fromList [
 ||| 
 ||| This is very flexible, but not very safe.
 ||| Use it only as fall-back,
-||| if there is no specific setter function in "Graphics.Gnuplot.Frame.OptionSet".
+||| if there is no specific setter function in "Gnuplot.Frame.OptionSet".
 export
-add : Option -> List String -> OptionSet graph -> OptionSet graph
-add opt args = {plain $= insert opt args}
+add : Option -> List String -> Opts -> Opts
+add = insert
 
 ||| Remove (unset) an option.
 ||| 
@@ -290,8 +284,8 @@ add opt args = {plain $= insert opt args}
 ||| Use it only as fall-back,
 ||| if there is no specific setter function in "Graphics.Gnuplot.Frame.OptionSet".
 export
-remove : Option -> OptionSet graph -> OptionSet graph
-remove opt = {plain $= delete opt}
+remove : Option -> Opts -> Opts
+remove = delete
 
 0 DiffTrpl : Type
 DiffTrpl = (Option, Maybe $ List String, Maybe $ List String)
@@ -299,7 +293,7 @@ DiffTrpl = (Option, Maybe $ List String, Maybe $ List String)
 ||| Convert the difference between the first and the second option set
 ||| into a sequence of 'set' and 'unset' commands.
 export
-diffToString : Plain -> Plain -> List String
+diffToString : Opts -> Opts -> List String
 diffToString m0 m1 = mapMaybe toString merged
   where merged : List DiffTrpl
         merged = SM.toList $ mergeWith (\x,y => (fst x, snd y))
@@ -319,7 +313,7 @@ diffToString m0 m1 = mapMaybe toString merged
 ||| 
 ||| See also: 'addBool', 'add', 'remove'.
 export
-boolean : Option -> Bool -> OptionSet graph -> OptionSet graph
+boolean : Option -> Bool -> Opts -> Opts
 boolean opt True  = add opt []
 boolean opt False = remove opt
 
@@ -334,5 +328,5 @@ boolean opt False = remove opt
 ||| 
 ||| See also 'boolean'.
 export
-addBool : Option -> Bool -> OptionSet graph -> OptionSet graph
+addBool : Option -> Bool -> Opts -> Opts
 addBool opt arg = add opt [formatBool arg opt.add]

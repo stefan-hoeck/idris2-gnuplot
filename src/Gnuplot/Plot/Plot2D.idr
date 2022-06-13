@@ -1,74 +1,101 @@
 module Gnuplot.Plot.Plot2D
 
+import Gnuplot.Graph.Graph2D
+import Gnuplot.Plot.Types
+import Gnuplot.Schema
+import Gnuplot.Util
+
 %default total
 
--- {- |
--- Plots can be assembled using 'mappend' or 'mconcat'.
--- You can alter attributes of embedded graphs using 'fmap'.
--- -}
--- type T x y = Plot.T (Graph.T x y)
--- 
--- 
--- -- * computed plots
--- 
--- {- |
--- > list Type.listLines (take 30 (let fibs = 0 : 1 : zipWith (+) fibs (tail fibs) in fibs))
--- > list Type.lines (take 30 (let fibs0 = 0 : fibs1; fibs1 = 1 : zipWith (+) fibs0 fibs1 in zip fibs0 fibs1))
--- -}
--- list ::
---    (Atom.C x, Atom.C y, Tuple.C a) =>
---    Type.T x y a -> [a] -> T x y
--- list typ ps =
---    Plot.withUniqueFile
---       (assembleCells (map Tuple.text ps))
---       [Graph.deflt typ
---          [1 .. case Type.tupleSize typ of Tuple.ColumnCount n -> n]]
--- 
--- {- |
--- > function Type.line (linearScale 1000 (-10,10)) sin
--- -}
--- function ::
---    (Atom.C x, Atom.C y,
---     Tuple.C a, Tuple.C b) =>
---    Type.T x y (a,b) -> [a] -> (a -> b) -> T x y
--- function typ args f =
---    list typ (functionToGraph args f)
--- 
--- {- |
--- > functions Type.line (linearScale 1000 (-10,10)) [sin, cos]
--- -}
--- functions ::
---    (Atom.C x, Atom.C y,
---     Tuple.C a, Tuple.C b) =>
---    Type.T x y (a,b) -> [a] -> [a -> b] -> T x y
--- functions typ args fs =
---    let dat = map (\x -> (x, map ($ x) fs)) args
---        mapType :: (a -> b) -> Type.T x y a -> Type.T x y b
---        mapType _ (Type.Cons str) = Type.Cons str
---        Tuple.ColumnCount na = Type.tupleSize $ mapType fst typ
---        Tuple.ColumnCount nb = Type.tupleSize $ mapType snd typ
---    in  Plot.withUniqueFile
---           (assembleCells
---               (map (\(a,b) -> Tuple.text a ++ concatMap Tuple.text b) dat))
---           (Match.take fs $
---            map (\ns -> Graph.deflt typ ([1..na] ++ ns)) $
---            ListHT.sliceVertical nb [(na+1)..])
--- 
--- 
--- {- |
--- > parameterFunction Type.line (linearScale 1000 (0,2*pi)) (\t -> (sin (2*t), cos t))
--- -}
--- parameterFunction ::
---    (Atom.C x, Atom.C y,
---     Tuple.C a) =>
---    Type.T x y a -> [t] -> (t -> a) -> T x y
--- parameterFunction typ args f = list typ (map f args)
--- 
--- 
--- 
--- -- * plot stored data
--- 
--- fromFile ::
+||| Plots can be assembled using 'mappend' or 'mconcat'.
+||| You can alter attributes of embedded graphs using 'fmap'.
+public export
+0 Plot2D : (x,y : Type) -> Type
+Plot2D x y =  Plot (Graph x y)
+
+--------------------------------------------------------------------------------
+--          Computed Plots
+--------------------------------------------------------------------------------
+
+||| Creates a plot from a single graph and a selection of
+||| columns from a precalculated table of data.
+export
+table :  Atoms s
+      => GraphType x y ts
+      -> Selection s ts
+      -> Table s
+      -> Plot2D x y
+table gt sel rows = fromTable rows [deflt gt sel]
+
+export
+function :  Atom a
+         => Atom b
+         => GraphType x y [a,b]
+         -> List a
+         -> (a -> b)
+         -> Plot2D x y
+function typ args f =
+  table {s = ["x" :> a, "y" :> b]} typ ["x","y"] $
+    map (\va => [va,f va]) args
+
+0 FunSchema' : Nat -> (b : Type) -> List c -> Schema
+FunSchema' k b []        = []
+FunSchema' k b (_ :: xs) = show k :> b :: FunSchema' (S k) b xs
+
+0 FunSchema : (a,b : Type) -> List c -> Schema
+FunSchema a b cs = "0" :> a :: FunSchema' 1 b cs
+
+funAtoms' : Atom b => (k : Nat) -> (fs : List c) -> Atoms (FunSchema' k b fs)
+funAtoms' k []        = []
+funAtoms' k (x :: xs) = %search :: funAtoms' (S k) xs
+
+funAtoms :  Atom a => Atom b => (fs : List c) -> Atoms (FunSchema a b fs)
+funAtoms fs = %search :: funAtoms' 1 fs
+
+funRow' :  (0 k : Nat)
+        -> a
+        -> (fs : List (a -> b))
+        -> Row (FunSchema' k b fs)
+funRow' k x []        = []
+funRow' k x (f :: fs) = f x :: funRow' (S k) x fs
+
+funRow : (fs : List (a -> b)) -> a -> Row (FunSchema a b fs)
+funRow fs x = x :: funRow' 1 x fs
+
+funTbl : List a -> (fs : List (a -> b)) -> Table (FunSchema a b fs)
+funTbl as fs = map (funRow fs) as
+
+sels' :  (0 k : Nat)
+      -> (fs : List (a -> b))
+      -> List (Sel (FunSchema' k b fs) b)
+sels' _ []        = []
+sels' k (_ :: xs) = MkSel (show k) Here :: map inc (sels' (S k) xs)
+
+sels : (fs : List (a -> b)) -> List (Selection (FunSchema a b fs) [a,b])
+sels fs = map (\s => [1, inc s]) (sels' 1 fs)
+
+export
+functions :  Atom a
+          => Atom b
+          => GraphType x y [a,b]
+          -> List a
+          -> List (a -> b)
+          -> Plot2D x y
+functions gt as fs =
+  let atom = funAtoms {a} {b} fs
+   in fromTable (funTbl as fs) (map (deflt gt) (sels fs))
+
+
+export
+parameterFunction :  Atom a
+                  => GraphType x y [a]
+                  -> List t
+                  -> (t -> a)
+                  -> Plot2D x y
+parameterFunction gt ts f = 
+  table {s = ["x" :> a]} gt ["x"] $ map (\vt => [f vt]) ts
+
+-- fromFile :
 --    (Atom.C x, Atom.C y) =>
 --    Type.T x y a -> FilePath -> Col.T a -> T x y
 -- fromFile typ filename (Col.Cons cs) =

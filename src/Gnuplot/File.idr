@@ -1,5 +1,7 @@
 module Gnuplot.File
 
+import Control.Monad.Either
+
 %default total
 
 infixl 5 />
@@ -21,3 +23,9 @@ export
 export
 Interpolation FilePath where
   interpolate p = show p.path
+
+public export
+record GPFile where
+  constructor MkFile
+  path    : FilePath
+  content : String

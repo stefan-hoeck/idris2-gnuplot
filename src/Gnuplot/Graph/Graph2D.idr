@@ -1,7 +1,11 @@
 module Gnuplot.Graph.Graph2D
 
+import Gnuplot.Frame.Option
 import Gnuplot.File
-import Gnuplot.Value
+import Gnuplot.Graph.Interface
+import Gnuplot.LineSpec
+import Gnuplot.Schema
+import Gnuplot.Util
 
 %default total
 
@@ -10,13 +14,13 @@ import Gnuplot.Value
 --------------------------------------------------------------------------------
 
 public export
-data GraphType : (x,y : GTpe) -> List GTpe -> Type where
-  ListLines       : GraphType GNat y [y]
-  ListPoints      : GraphType GNat y [y]
-  ListLinesPoints : GraphType GNat y [y]
-  ListImpulses    : GraphType GNat y [y]
-  ListDots        : GraphType GNat y [y]
-  Histograms      : GraphType GNat y [y]
+data GraphType : (x,y : Type) -> List Type -> Type where
+  ListLines       : GraphType Nat y [y]
+  ListPoints      : GraphType Nat y [y]
+  ListLinesPoints : GraphType Nat y [y]
+  ListImpulses    : GraphType Nat y [y]
+  ListDots        : GraphType Nat y [y]
+  Histograms      : GraphType Nat y [y]
   
   XErrorBarsRelative   : GraphType x y [x,y,x]
   YErrorBarsRelative   : GraphType x y [x,y,y]
@@ -48,7 +52,7 @@ data GraphType : (x,y : GTpe) -> List GTpe -> Type where
   FinanceBars    : GraphType x y [x,y,y,y,y]
   CandleSticks   : GraphType x y [x,y,y,y,y]
   Vectors        : GraphType x y [x,y,x,y]
-  Image          : (0 z : GTpe) -> GraphType x y [x,y,z]
+  Image          : (0 z : Type) -> GraphType x y [x,y,z]
   
   FilledStripe      : GraphType x y [x,y,y]
   FilledStripeAbove : GraphType x y [x,y,y]
@@ -98,74 +102,46 @@ Interpolation (GraphType x y ts) where
   interpolate FilledStripeBelow    = "filledcurves below"
 
 --------------------------------------------------------------------------------
---          Graph Type
---------------------------------------------------------------------------------
-
-public export
-data LineSpec : Type where
-
-export
-Interpolation LineSpec where
-  interpolate x impossible
-
---------------------------------------------------------------------------------
 --          Graph
 --------------------------------------------------------------------------------
 
 public export
-record Graph (x,y : GTpe) where
+record Graph (x,y : Type) (s : Schema) where
   constructor MkGraph
-  cols : (Nat,Nat)
-  type : String
-  line : LineSpec
+  type : GraphType x y ts
+  cols : Selection s ts
+  line : Line
 
 export
-toString : Graph x y -> String
-toString (MkGraph (c1,c2) t l) =
-  "using \{show c1}:\{show c2} with \{t} \{l}"
+defltOptions : (0 x,y : Type) -> Atom x => Atom y => Opts
+defltOptions x y =
+  let mk : Option -> Option -> Options a -> List (Option, List String)
+      mk odata oformat os =
+       (odata, optData os) :: (oformat, format os) :: others os
 
--- type AxisOption x y a =
---    OptionSet.T (T x y) -> Atom.OptionSet a
--- 
--- defltOptions :: (Atom.C x, Atom.C y) => OptionSet.T (T x y)
--- defltOptions =
---    let mk ::
---           Option.T -> Option.T ->
---           Atom.OptionSet a -> [(Option.T, [String])]
---        mk optData optFormat opts =
---           (optData, Atom.optData opts) :
---           (optFormat, Atom.optFormat opts) :
---           Atom.optOthers opts
---        result ::
---           Atom.OptionSet x ->
---           Atom.OptionSet y ->
---           OptionSet.T (T x y)
---        result optX optY =
---           OptionSet.Cons $
---           flip Map.union OptionSet.deflt $
---           Map.fromList $
---           mk Option.xData Option.xFormat optX ++
---           mk Option.yData Option.yFormat optY ++
---           (Option.zData, []) :
---           (Option.zFormat, []) :
---           []
---    in  result Atom.options Atom.options
--- 
--- 
--- instance (Atom.C x, Atom.C y) => Graph.C (T x y) where
---    command = Graph.Command "plot"
---    toString = toString
---    defltOptions = defltOptions
--- 
--- 
--- deflt :: GraphType.T x y a -> Columns -> T x y
--- deflt t c = Cons c (GraphType.toString t) LineSpec.deflt
--- 
--- typ :: Type -> T x y -> T x y
--- typ t gr = gr{type_ = t}
--- 
--- {- |
--- You can alter the line specification of graphs in a plot using 'fmap'.
--- -}
--- lineSpec :: LineSpec.T -> T x y -> T x y
--- lineSpec ls gr = gr{lineSpec_ = ls}
+      result : Options x -> Options y -> Opts
+      result optX optY =
+         flip merge deflt $
+         fromList $
+           mk xData xFormat optX ++
+           mk yData yFormat optY ++
+           [(zData, []), (zFormat, [])]
+  in result (options x) (options y)
+
+export
+Interpolation (Graph x y s) where
+  interpolate (MkGraph t cols l) = "using \{cols} with \{t} \{l}"
+
+export
+Atom x => Atom y => IsGraph (Graph x y) where
+  command_      = "plot"
+  defltOptions_ = Graph2D.defltOptions x y
+  toString      = interpolate
+
+export
+deflt : GraphType x y ts -> Selection s ts -> Graph x y s
+deflt t c = MkGraph t c deflt
+
+export
+line : Line -> Graph x y s -> Graph x y s
+line l = {line := l}

@@ -9,6 +9,25 @@ license    = "BSD-3 Clause"
 sourcedir  = "src"
 depends    = base    >= 0.5.1
            , contrib
+           , sop
 
 modules = Gnuplot
+
+        , Gnuplot.ColorSpec
+        , Gnuplot.Display
+        , Gnuplot.File
+
+        , Gnuplot.Frame
+        , Gnuplot.Frame.Option
+
+        , Gnuplot.Graph.Graph2D
+        , Gnuplot.Graph.Interface
+
+        , Gnuplot.LineSpec
+
+        , Gnuplot.Plot.Plot2D
+        , Gnuplot.Plot.Types
+
+        , Gnuplot.Schema
         , Gnuplot.Terminal
+        , Gnuplot.Util
