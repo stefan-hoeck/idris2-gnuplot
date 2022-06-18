@@ -108,8 +108,9 @@ Interpolation (GraphType x y ts) where
 public export
 record Graph (x,y : Type) (s : Schema) where
   constructor MkGraph
-  type : GraphType x y ts
-  cols : Selection s ts
+  {0 types : List Type}
+  type : GraphType x y types
+  cols : Selection s types
   line : Line
 
 export

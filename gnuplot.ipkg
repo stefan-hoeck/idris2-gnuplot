@@ -10,6 +10,7 @@ sourcedir  = "src"
 depends    = base    >= 0.5.1
            , contrib
            , sop
+           , rio
 
 modules = Gnuplot
 

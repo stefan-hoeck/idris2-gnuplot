@@ -1,0 +1,10 @@
+[custom.all.rio]
+type   = "github"
+url    = "https://github.com/stefan-hoeck/idris2-rio"
+commit = "latest:main"
+ipkg   = "rio.ipkg"
+
+[custom.all.gnuplot]
+type   = "local"
+path   = "."
+ipkg   = "gnuplot.ipkg"

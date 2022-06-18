@@ -20,7 +20,8 @@ Plot2D x y =  Plot (Graph x y)
 ||| Creates a plot from a single graph and a selection of
 ||| columns from a precalculated table of data.
 export
-table :  Atoms s
+table :  {0 ts : _}
+      -> Atoms s
       => GraphType x y ts
       -> Selection s ts
       -> Table s

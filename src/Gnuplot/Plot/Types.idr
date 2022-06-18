@@ -57,7 +57,7 @@ tmpFileStem = "curve"
 export
 fromTable : Table s -> Atoms s => List (g s) -> Plot g
 fromTable rs gs = MkPlot $ \n,dir =>
-  (S n, [TableData (dir /> "\{tmpFileStem}\{show n}" <.> "csv") rs gs])
+  (S n, [TableData (dir /> "\{tmpFileStem}\{show n}.csv") rs gs])
 
 export
 fromFile : FilePath -> List (g s) -> Plot g
