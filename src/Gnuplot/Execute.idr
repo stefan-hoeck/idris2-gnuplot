@@ -41,23 +41,23 @@ withTempDir run =
     run gnuplotDir
 
 export
-withTempFile :  PlotEnv xs => (run : FilePath -> App xs a) -> App xs a
-withTempFile run = finally (rmFile curveFile) $ run curveFile
+withTempFile : PlotEnv xs => (run : FilePath -> App xs a) -> App xs a
+withTempFile run = finally (removeFile curveFile) $ run curveFile
 
--- export
--- runCmd :  HasIO io
---        => (FilePath -> (List String, List GPFile))
---        -> EitherT Err io ()
--- runCmd f = withTempDir $ \dir =>
---   let (commands, files) = f dir
---    in do traverse_ writeGP files
---          withTempFile $ \fil => do
---            write fil (unlines commands)
---            sys "gnuplot \{fil}"
--- 
--- export
--- runScript : HasIO io => ToScript a => a -> EitherT Err io ()
--- runScript x =
---   let MkScript f = toScript x
---    in runCmd $ \fp => case f 0 deflt fp of
---         (_,_,MkBody fs cs) => (cs,fs)
+export
+runCmd :  PlotEnv xs
+       => (FilePath -> (List String, List GPFile))
+       -> App xs ()
+runCmd f = withTempDir $ \dir =>
+  let (commands, files) = f dir
+   in do traverse_ writeGP files
+         withTempFile $ \fil => do
+           write fil (unlines commands)
+           sys "gnuplot \{fil}"
+
+export
+runScript : PlotEnv xs => ToScript a => a -> App xs ()
+runScript x =
+  let MkScript f = toScript x
+   in runCmd $ \fp => case f 0 deflt fp of
+        (_,_,MkBody fs cs) => (cs,fs)

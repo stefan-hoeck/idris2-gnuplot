@@ -16,6 +16,7 @@ modules = Gnuplot
 
         , Gnuplot.ColorSpec
         , Gnuplot.Display
+        , Gnuplot.Execute
         , Gnuplot.File
 
         , Gnuplot.Frame
