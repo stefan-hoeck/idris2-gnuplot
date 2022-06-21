@@ -2,7 +2,7 @@ module Gnuplot.Plot.Types
 
 import Data.SortedMap
 import Gnuplot.Display
-import Gnuplot.Frame.Option
+import Gnuplot.Options
 import Gnuplot.Graph.Interface
 import Gnuplot.File
 import Gnuplot.Schema
@@ -63,20 +63,13 @@ export
 fromFile : FilePath -> List (g s) -> Plot g
 fromFile name gs = pure [FileData name gs]
 
--- instance Functor T where
---    fmap f (Cons mp) =
---       Cons $
---       fmap (map (\file -> file{graphs_ = map f $ graphs_ file}))
---       mp
--- 
-
 toFile : GraphData g -> Maybe GPFile
 toFile (FileData _ _)      = Nothing
 toFile (TableData f tbl _) = Just $ MkFile f (printTable tbl)
 
 toStrs : IsGraph g => GraphData g -> List String
-toStrs (FileData f gs)    = map (\g => "\{f} \{toString g}") gs
-toStrs (TableData f _ gs) = map (\g => "\{f} \{toString g}") gs
+toStrs (FileData f gs)    = map (\g => "\"\{f}\" \{toString g}") gs
+toStrs (TableData f _ gs) = map (\g => "\"\{f}\" \{toString g}") gs
 
 ||| In contrast to the Display.toScript method instantiation
 ||| this function leaves the options,
@@ -90,10 +83,5 @@ script p@(MkPlot mp) = MkScript $ \n,pl,fp =>
    in (n2, pl, MkBody files ["\{command g} \{commaConcat graphs}"])
 
 export
-optionsToScript : Opts -> Script
-optionsToScript os1 = MkScript $ \n,os0,fp =>
-  (n,os1,MkBody [] (diffToString os0 os1))
-
-export
 IsGraph g => ToScript (Plot g) where
-  toScript p = optionsToScript (defltOptions g) <+> script p
+  toScript p = script p

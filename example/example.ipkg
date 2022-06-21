@@ -1,0 +1,17 @@
+package gnuplot-example
+
+authors    = "stefan-hoeck"
+brief      = "Examples for working with gnuplot in Idris2"
+version    = 0.0.1
+license    = "BSD-3 Clause"
+
+depends    = base    >= 0.5.1
+           , contrib
+           , sop
+           , rio
+           , gnuplot
+
+main       = Main
+executable = "makePlots"
+
+sourcedir  = "src"

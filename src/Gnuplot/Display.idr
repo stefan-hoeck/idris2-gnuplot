@@ -1,6 +1,6 @@
 module Gnuplot.Display
 
-import Gnuplot.Frame.Option
+import Gnuplot.Options
 import Gnuplot.File
 import Gnuplot.Util
 
@@ -25,11 +25,19 @@ Monoid Body where
 public export
 record Script where
   constructor MkScript
-  run : Nat -> Opts -> FilePath -> (Nat,Opts,Body)
+  run : Nat -> Settings -> FilePath -> (Nat,Settings,Body)
 
 export
 pure : Body -> Script
-pure b = MkScript $ \n,o,_ => (n,o,b)
+pure b = MkScript $ \n,s,_ => (n,s,b)
+
+export
+set : Settings -> Script
+set ss = MkScript $ \n,_,_ => (n,ss,neutral)
+
+export
+reset : Settings -> Script
+reset ss = MkScript $ \n,_,_ => (n,[],MkBody [] ["reset"])
 
 export
 Semigroup Script where

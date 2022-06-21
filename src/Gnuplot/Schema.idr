@@ -7,21 +7,9 @@
 ||| as well as the shape of tables computed at runtime.
 module Gnuplot.Schema
 
-import Gnuplot.Frame.Option
 import Gnuplot.Util
 
 %default total
-
-public export
-record Options (a : Type) where
-  constructor MkOptions
-  optData : List String
-  format  : List String
-  others  : List (Option, List String)
-
-export
-empty : Options a
-empty = MkOptions [] [] []
 
 --------------------------------------------------------------------------------
 --          Universe
@@ -33,66 +21,50 @@ data Lit = LInt Integer | LDbl Double
 public export
 interface Atom a where
   toLit : a -> Lit
-  options_ : Options a
-
-export
-options : (0 a : Type) -> Atom a => Options a
-options a = options_ {a}
 
 public export %inline
 Atom Double where
   toLit = LDbl
-  options_ = empty
 
 public export %inline
 Atom Integer where
   toLit = LInt
-  options_ = empty
 
 public export %inline
 Atom Bits8 where
   toLit = LInt . cast
-  options_ = empty
 
 public export %inline
 Atom Bits16 where
   toLit = LInt . cast
-  options_ = empty
 
 public export %inline
 Atom Bits32 where
   toLit = LInt . cast
-  options_ = empty
 
 public export %inline
 Atom Bits64 where
   toLit = LInt . cast
-  options_ = empty
 
 public export %inline
 Atom Int8 where
   toLit = LInt . cast
-  options_ = empty
 
 public export %inline
 Atom Int16 where
   toLit = LInt . cast
-  options_ = empty
 
 public export %inline
 Atom Int32 where
   toLit = LInt . cast
-  options_ = empty
 
 public export %inline
 Atom Int64 where
   toLit = LInt . cast
-  options_ = empty
 
 public export %inline
 Atom Nat where
   toLit = LInt . cast
-  options_ = empty
 
 export
 print : Atom a => a -> String
@@ -166,6 +138,12 @@ toNat : InSchema n cs t -> Nat
 toNat Here      = 1
 toNat (There p) = S $ toNat p
 
+public export
+columnName : {s : _} -> InSchema n s t -> String
+columnName {s = n :> _ :: _} Here      = n
+columnName {s = _ :: _}      (There x) = columnName x
+
+
 ||| Proof that a row with the given (1-based) index in the schema
 public export
 data IxInSchema : (x : Nat) -> (cs : Schema) -> (t : Type) -> Type where
@@ -183,6 +161,10 @@ record Sel (s : Schema) (t : Type) where
 public export
 inc : Sel s t -> Sel (c :: s) t
 inc (MkSel n p) = MkSel n (There p)
+
+public export
+colName : {s : _} -> Sel s t -> String
+colName sel = columnName sel.prf
 
 export
 Interpolation (Sel s t) where
@@ -226,6 +208,22 @@ SchemaTypes []        = []
 SchemaTypes (_ :> t :: cs) = t :: SchemaTypes cs
 
 --------------------------------------------------------------------------------
+--          Creating Tables
+--------------------------------------------------------------------------------
+
+export
+functions :  List a
+          -> NP_ Column (\c => a -> c.type) cs
+          -> Table (n :> a :: cs)
+functions xs fs = map (\v =>  v :: mapNP ($ v) fs) xs
+
+export
+param :  List a
+      -> NP_ Column (\c => a -> c.type) cs
+      -> Table cs
+param xs fs = map (\v => mapNP ($ v) fs) xs
+
+--------------------------------------------------------------------------------
 --          Example
 --------------------------------------------------------------------------------
 
@@ -237,3 +235,13 @@ columnsByName = ["Year", "XYZ"]
 
 columnsByIndex : Selection Prices [Bits16, Bits32]
 columnsByIndex = [1,3]
+
+trigTable : Table [ "x"      :> Double
+                  , "sin(x)" :> Double
+                  , "cos(x)" :> Double
+                  , "tan(x)" :> Double
+                  ]
+trigTable = functions (linear 2000 (-4*pi) (4*pi)) [sin,cos,tan]
+
+circle : Table ["x" :> Double, "y" :> Double]
+circle = param (linear 2000 (- pi) pi) [sin,cos]

@@ -35,3 +35,39 @@ Interpolation Line where
     , asList (\n => "pointsize \{show n}") ps
     , asList (\n => "title \{quote n}") ttl
     ]
+
+public export
+data Prop : Type -> Type where
+  Style     : Prop Nat
+  Tpe       : Prop Nat
+  Width     : Prop Double
+  Color     : Prop Color
+  PointType : Prop Nat
+  PointSize : Prop Double
+  Title     : Prop String
+
+infix 3 .=
+
+public export
+(.=) : Prop t -> t -> Line -> Line
+(.=) Style v     = {style     := Just v}
+(.=) Tpe v       = {type      := Just v}
+(.=) Width v     = {width     := Just v}
+(.=) Color v     = {color     := Just v}
+(.=) PointType v = {pointType := Just v}
+(.=) PointSize v = {pointSize := Just v}
+(.=) Title v     = {title     := Just v}
+
+public export
+unset : Prop t -> Line -> Line
+unset Style     = {style     := Nothing}
+unset Tpe       = {type      := Nothing}
+unset Width     = {width     := Nothing}
+unset Color     = {color     := Nothing}
+unset PointType = {pointType := Nothing}
+unset PointSize = {pointSize := Nothing}
+unset Title     = {title     := Nothing}
+
+export
+setAll : List (Line -> Line) -> Line
+setAll = foldl (\l,f => f l) deflt
