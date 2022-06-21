@@ -43,20 +43,20 @@ concatList : List (List a) -> List a
 concatList = join
 
 export
-fromIx : (n : Nat) -> (Nat -> a) -> Vect n a
+fromIx : (n : Nat) -> (Nat -> a) -> List a
 fromIx n f = go 0 n
-  where go : (x : Nat) -> (m : Nat) -> Vect m a
+  where go : (x : Nat) -> (m : Nat) -> List a
         go _ 0     = []
         go x (S k) = f x :: go (S x) k
 
 export
-linearScale :  Neg a 
-            => Fractional a
-            => (n : Nat)
-            -> (0 _ : IsSucc n)
-            => (a,a)
-            -> Vect (S n) a
-linearScale n (x0,x1) =
+linear :  Neg a 
+       => Fractional a
+       => (n : Nat)
+       -> (0 _ : IsSucc n)
+       => (x0, x1 : a)
+       -> List a
+linear n x0 x1 =
   let n'   = the a (fromInteger $ cast n)
       diff = x1 - x0
    in fromIx (S n) (\x => x0 + (fromInteger $ cast x) * diff / n')

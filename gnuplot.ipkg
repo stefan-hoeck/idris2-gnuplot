@@ -10,24 +10,30 @@ sourcedir  = "src"
 depends    = base    >= 0.5.1
            , contrib
            , sop
+           , rio
 
 modules = Gnuplot
 
         , Gnuplot.ColorSpec
         , Gnuplot.Display
+        , Gnuplot.Execute
         , Gnuplot.File
 
         , Gnuplot.Frame
-        , Gnuplot.Frame.Option
 
         , Gnuplot.Graph.Graph2D
         , Gnuplot.Graph.Interface
 
         , Gnuplot.LineSpec
 
+        , Gnuplot.Options
+        , Gnuplot.Options.Range
+        , Gnuplot.Options.Label
+
         , Gnuplot.Plot.Plot2D
         , Gnuplot.Plot.Types
 
         , Gnuplot.Schema
+
         , Gnuplot.Terminal
         , Gnuplot.Util

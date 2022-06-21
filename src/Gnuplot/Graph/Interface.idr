@@ -1,6 +1,6 @@
 module Gnuplot.Graph.Interface
 
-import Gnuplot.Frame.Option
+import Gnuplot.Options
 import Gnuplot.Schema
 import Gnuplot.Util
 
@@ -23,12 +23,7 @@ public export
 interface IsGraph (0 g : Schema -> Type) where
   command_      : Command g
   toString      : g s -> String
-  defltOptions_ : Opts
 
 export
 command : (0 g : Schema -> Type) -> IsGraph g => Command g
 command _ = command_
-
-export
-defltOptions : (0 g : Schema -> Type) -> IsGraph g => Opts
-defltOptions g = defltOptions_ {g}
