@@ -7,9 +7,10 @@ license    = "BSD-3 Clause"
 
 depends    = base    >= 0.5.1
            , contrib
-           , sop
-           , rio
+           , filepath
            , gnuplot
+           , rio
+           , sop
 
 main       = Main
 executable = "makePlots"

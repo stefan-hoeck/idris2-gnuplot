@@ -1,5 +1,8 @@
 module Gnuplot.Plot.Types
 
+import Data.FilePath
+import Data.FilePath.Body
+
 import Data.SortedMap
 import Gnuplot.Display
 import Gnuplot.Options
@@ -25,7 +28,7 @@ data GraphData : (g : Schema -> Type) -> Type where
   TableData :  {0 g : Schema -> Type}
             -> {0 schema : Schema}
             -> (cols     : Atoms schema)
-            => (file     : FilePath)
+            => (file     : Path Abs)
             -> (table    : Table schema)
             -> (graphs   : List (g schema))
             -> GraphData g
@@ -34,7 +37,7 @@ data GraphData : (g : Schema -> Type) -> Type where
 public export
 record Plot (g : Schema -> Type) where
   constructor MkPlot
-  run : Nat -> FilePath -> (Nat, List $ GraphData g)
+  run : Nat -> Path Abs -> (Nat, List $ GraphData g)
 
 export
 pure : List (GraphData g) -> Plot g
@@ -51,13 +54,15 @@ export
 Monoid (Plot g) where
   neutral = pure []
 
-tmpFileStem : String
-tmpFileStem = "curve"
+tmpFile : Nat -> Body
+tmpFile n = "curve" <+> natBody <+> ".csv"
+  where natBody : Body
+        natBody = fromMaybe "0" . body $ show n
 
 export
 fromTable : Table s -> Atoms s => List (g s) -> Plot g
 fromTable rs gs = MkPlot $ \n,dir =>
-  (S n, [TableData (dir /> "\{tmpFileStem}\{show n}.csv") rs gs])
+  (S n, [TableData (dir /> tmpFile n) rs gs])
 
 export
 fromFile : FilePath -> List (g s) -> Plot g
@@ -78,9 +83,9 @@ export
 script : IsGraph g => Plot g -> Script
 script p@(MkPlot mp) = MkScript $ \n,pl,fp =>
   let (n2,blocks) = mp n fp
-      files       = mapMaybe toFile blocks
+      files       = Lin <>< mapMaybe toFile blocks
       graphs      = foldMap toStrs blocks
-   in (n2, pl, MkBody files ["\{command g} \{commaConcat graphs}"])
+   in (n2, pl, MkContent files [< "\{command g} \{commaConcat graphs}"])
 
 export
 IsGraph g => ToScript (Plot g) where

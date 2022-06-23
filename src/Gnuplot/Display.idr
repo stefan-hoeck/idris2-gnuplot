@@ -4,31 +4,32 @@ import Gnuplot.Options
 import Gnuplot.File
 import Gnuplot.Util
 
-||| Body of a gnuplot script, consisting of a
+||| Content of a gnuplot script, consisting of a
 ||| list of files, which need to be written, as well
 ||| as a list of commands representing the script
 public export
-record Body where
-  constructor MkBody
-  files    : List GPFile
-  commands : List String
+record Content where
+  constructor MkContent
+  files    : SnocList GPFile
+  commands : SnocList String
 
 export
-Semigroup Body where
-  MkBody fs1 cs1 <+> MkBody fs2 cs2 = MkBody (fs1 ++ fs2) (cs1 ++ cs2)
+Semigroup Content where
+  MkContent fs1 cs1 <+> MkContent fs2 cs2 =
+    MkContent (fs1 ++ fs2) (cs1 ++ cs2)
 
 export
-Monoid Body where
-  neutral = MkBody [] []
+Monoid Content where
+  neutral = MkContent [<] [<]
 
 ||| Originally Private.Display.C
 public export
 record Script where
   constructor MkScript
-  run : Nat -> Settings -> FilePath -> (Nat,Settings,Body)
+  run : Nat -> Settings -> Path Abs -> (Nat,Settings,Content)
 
 export
-pure : Body -> Script
+pure : Content -> Script
 pure b = MkScript $ \n,s,_ => (n,s,b)
 
 export
@@ -37,7 +38,7 @@ set ss = MkScript $ \n,_,_ => (n,ss,neutral)
 
 export
 reset : Settings -> Script
-reset ss = MkScript $ \n,_,_ => (n,[],MkBody [] ["reset"])
+reset ss = MkScript $ \n,_,_ => (n,[],MkContent [<] [<"reset"])
 
 export
 Semigroup Script where
