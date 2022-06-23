@@ -109,7 +109,7 @@ pngToInfo (PNG p t i c fs) = MkTermInfo {
                             , formatBoolM c "truecolor"
                             , map interpolate fs
                             ]
-  , commands    = ["set output \{p}"]
+  , commands    = ["set output \"\{p}\""]
   , interactive = False
   }
 
@@ -145,7 +145,7 @@ psToInfo (PS p m c fs fo) = MkTermInfo {
                              , map (\f => "fontfile \{f}") fs
                              , asList (\(n,s) => "font \{quote n} \{show s}") fo
                              ]
-  , commands    = ["set output \{p}"]
+  , commands    = ["set output \"\{p}\""]
   , interactive = False
   }
 
@@ -160,7 +160,7 @@ svg = SVG
 svgToInfo : Terminal SVGTpe -> TermInfo
 svgToInfo (SVG p) = MkTermInfo {
     options     = ["svg"]
-  , commands    = ["set output \{p}"]
+  , commands    = ["set output \"\{p}\""]
   , interactive = False
   }
 

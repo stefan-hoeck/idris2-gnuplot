@@ -22,19 +22,27 @@ run plot =
   let console = stdIO
       fs      = File.local
       sys     = Sys.system
-      log     = colorConsoleLogger console
-   in runApp handlers $ runScript (WXT Nothing $ Just True) plot
+      log     = filter Debug (colorConsoleLogger console)
+   in runApp handlers $ runScript (SVG "test.svg") plot
 
 --------------------------------------------------------------------------------
 --          Plot Examples
 --------------------------------------------------------------------------------
 
-trigs : Table [ "x"      :> Double
-              , "sin(x)" :> Double
-              , "cos(x)" :> Double
-              , "tan(x)" :> Double
+trigs : Table [ "x"            :> Double
+              , "sin(x)"       :> Double
+              , "cos(x)"       :> Double
+              , "tan(x)"       :> Double
+              , "exp(x)"       :> Double
+              , "3 * exp(1/x)" :> Double
               ]
-trigs = functions (linear 2000 (-2*pi) (2*pi)) [sin,cos,tan]
+trigs = functions (linear 4000 (-2*pi) (2*pi))
+          [ sin
+          , cos
+          , tan
+          , exp
+          , \x => if abs x < 0.0001 then 0 else 0.3 * exp (1 / x)
+          ]
 
 sinCosTan : Frame2D Double Double
 sinCosTan = frame
@@ -46,6 +54,8 @@ sinCosTan = frame
     [ titled Lines [1,2]
     , titled Lines [1,3]
     , titled Lines [1,4]
+    , titled Lines [1,5]
+    , titled Lines [1,6]
     ]
 
 --------------------------------------------------------------------------------
