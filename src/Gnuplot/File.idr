@@ -7,5 +7,5 @@ import public Data.FilePath
 public export
 record GPFile where
   constructor MkFile
-  path    : FilePath
+  path    : Path Abs
   content : String

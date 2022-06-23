@@ -11,6 +11,7 @@ depends    = base    >= 0.5.1
            , contrib
            , sop
            , rio
+           , filepath
 
 modules = Gnuplot
 

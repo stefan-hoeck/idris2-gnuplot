@@ -7,3 +7,8 @@ ipkg   = "gnuplot.ipkg"
 type   = "local"
 path   = "example"
 ipkg   = "example.ipkg"
+
+[custom.all.rio]
+type   = "local"
+path   = "../rio"
+ipkg   = "rio.ipkg"

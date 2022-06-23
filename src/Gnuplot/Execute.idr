@@ -32,38 +32,55 @@ writeGP (MkFile p c) = do
   trace "Content\n\{c}"
   write p c
 
-gnuplotDir : FilePath
-gnuplotDir = ".gnuplot"
+gnuplotDir : Path Abs -> Path Abs
+gnuplotDir dir = dir /> ".gnuplot"
 
-curveFile : FilePath
-curveFile = "curve.gp"
-
-export
-withTempDir : PlotEnv xs => (run : FilePath -> App xs a) -> App xs a
-withTempDir run =
-  finally (rmDir gnuplotDir) $ do
-    when !(missing gnuplotDir) (mkDir gnuplotDir)
-    inDir gnuplotDir (run "")
+curveFile : Path Abs -> Path Abs
+curveFile dir = dir /> "curve.gp"
 
 export
-withTempFile : PlotEnv xs => (run : FilePath -> App xs a) -> App xs a
-withTempFile run = finally (removeFile curveFile) $ run curveFile
+withTempDir :  PlotEnv xs
+            => (dir : Path Abs)
+            -> (run : Path Abs -> App xs a)
+            -> App xs a
+withTempDir dir run =
+  let gpdir = gnuplotDir dir
+   in finally (rmDir gpdir) $ do
+        when !(missing gpdir) (mkDir gpdir)
+        run gpdir
+
+export
+withTempFile :  PlotEnv xs
+             => (dir : Path Abs)
+             -> (run : Path Abs -> App xs a)
+             -> App xs a
+withTempFile dir run =
+  let cfile = curveFile dir
+   in finally (removeFile cfile) $ run cfile
 
 export
 runCmd :  PlotEnv xs
-       => (FilePath -> (List String, List GPFile))
+       => (dir : Path Abs)
+       -> (Path Abs -> (List String, List GPFile))
        -> App xs ()
-runCmd f = withTempDir $ \dir =>
-  let (commands, files) = f dir
+runCmd dir f = withTempDir dir $ \td =>
+  let (commands, files) = f td
    in do traverse_ writeGP files
-         withTempFile $ \fil => do
+         withTempFile td $ \fil => do
            writeGP (MkFile fil $ unlines commands)
            sys "gnuplot \{fil}"
 
 export
-runScript : PlotEnv xs => ToScript a => Terminal t -> a -> App xs ()
+runScript :  PlotEnv xs
+          => ToScript a
+          => Terminal t
+          -> a
+          -> App xs ()
 runScript term x =
   let MkScript f := toScript x
       cmds       := format (toInfo term)
-   in runCmd $ \fp => case f 0 [] fp of
-        (_,ss,MkBody fs cs) => (cmds ++ map interpolate ss ++ cs,fs)
+   in do
+      dir <- curDir
+      runCmd dir $ \fp => case f 0 [] fp of
+        (_,ss,MkContent fs cs) =>
+          (cmds ++ map interpolate ss ++ (cs <>> []),fs <>> [])
