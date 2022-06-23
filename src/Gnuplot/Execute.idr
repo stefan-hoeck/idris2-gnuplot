@@ -1,8 +1,10 @@
 module Gnuplot.Execute
 
+import Control.RIO.Console
 import Control.RIO.File
 import Control.RIO.Logging
 
+import Data.List.Quantifiers
 import Data.List1
 
 import Gnuplot.Display
@@ -84,3 +86,21 @@ runScript term x =
       runCmd dir $ \fp => case f 0 [] fp of
         (_,ss,MkContent fs cs) =>
           (cmds ++ map interpolate ss ++ (cs <>> []),fs <>> [])
+
+--------------------------------------------------------------------------------
+--          Running the app
+--------------------------------------------------------------------------------
+
+handlers : Logger => All (Handler ()) [FileErr,SysErr]
+handlers = [ \e => error (printErr e)
+           , \e => error (printErr e)
+           ]
+
+export
+run : ToScript a => Terminal t -> a -> IO ()
+run term plot =
+  let console = stdIO
+      fs      = File.local
+      sys     = Sys.system
+      log     = filter Info (colorConsoleLogger console)
+   in runApp handlers $ runScript term plot
