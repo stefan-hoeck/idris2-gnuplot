@@ -4,6 +4,7 @@ import Gnuplot.Graph.Graph2D
 import Gnuplot.LineSpec
 import Gnuplot.Plot.Types
 import Gnuplot.Schema
+import Gnuplot.Schema.Expr
 import Gnuplot.Util
 
 %default total
@@ -51,7 +52,7 @@ function :  Atom a
          -> List (Line -> Line)
          -> Plot2D x y
 function typ args f =
-  table {s = ["x" :> a, "y" :> b]} typ ["x","y"] $
+  table {s = ["x" :> a, "y" :> b]} typ [Var "x",Var "y"] $
     map (\va => [va,f va]) args
 
 public export
@@ -97,7 +98,7 @@ sels' _ []        = []
 sels' k (_ :: xs) = MkSel (show k) Here :: map inc (sels' (S k) xs)
 
 sels : (fs : List x) -> List (Selection (FunSchema a b fs) [a,b])
-sels fs = map (\s => [1, inc s]) (sels' 1 fs)
+sels fs = map (\s => [Var 1, Var $ inc s]) (sels' 1 fs)
 
 export
 functions :  Atom a

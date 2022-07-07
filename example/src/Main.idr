@@ -19,7 +19,7 @@ handlers = [ \e => error (printErr e)
 
 run : ToScript a => a -> IO ()
 run plot =
-  let console = stdIO
+  let console = stdOut
       fs      = File.local
       sys     = Sys.system
       log     = filter Debug (colorConsoleLogger console)
@@ -51,11 +51,11 @@ sinCosTan = frame
   , ylabel .= "y"
   ] $
   fromTable trigs
-    [ titled Lines [1,2]
-    , titled Lines [1,3]
-    , titled Lines [1,4]
-    , titled Lines [1,5]
-    , titled Lines [1,6]
+    [ titled Lines [Var 1,Var 2]
+    , titled Lines [Var 1,Var 3]
+    , titled Lines [Var 1,Var 4]
+    , titled Lines [Var 1,Var 5]
+    , titled Lines [Var 1,Var 6]
     ]
 
 --------------------------------------------------------------------------------

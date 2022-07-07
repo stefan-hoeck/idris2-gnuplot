@@ -11,5 +11,6 @@ import public Gnuplot.Options
 import public Gnuplot.Plot.Plot2D
 import public Gnuplot.Plot.Types
 import public Gnuplot.Schema
+import public Gnuplot.Schema.Expr
 import public Gnuplot.Terminal
 import public Gnuplot.Util

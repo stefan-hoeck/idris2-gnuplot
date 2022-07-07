@@ -1,9 +1,10 @@
 module Gnuplot.Graph.Graph2D
 
-import Gnuplot.Options
+import Gnuplot.Schema.Expr
 import Gnuplot.File
 import Gnuplot.Graph.Interface
 import Gnuplot.LineSpec
+import Gnuplot.Options
 import Gnuplot.Schema
 import Gnuplot.Util
 
@@ -101,6 +102,21 @@ Interpolation (GraphType x y ts) where
 --  interpolate FilledStripeAbove    = "filledcurves above"
 --  interpolate FilledStripeBelow    = "filledcurves below"
 
+gtAtoms : Atom x => Atom y => GraphType x y ts -> NP Atom ts
+gtAtoms Histograms   = %search
+gtAtoms Lines        = %search
+gtAtoms Points       = %search
+gtAtoms LinesPoints  = %search
+gtAtoms Impulses     = %search
+gtAtoms Dots         = %search
+gtAtoms Steps        = %search
+gtAtoms FSteps       = %search
+gtAtoms HiSteps      = %search
+gtAtoms ErrorBars    = %search
+gtAtoms ErrorLines   = %search
+gtAtoms Boxes        = %search
+gtAtoms FilledCurves = %search
+
 --------------------------------------------------------------------------------
 --          Graph
 --------------------------------------------------------------------------------
@@ -114,8 +130,10 @@ record Graph (x,y : Type) (s : Schema) where
   line : List (Line -> Line)
 
 export
-Interpolation (Graph x y s) where
-  interpolate (G t cols ls) = "using \{cols} with \{t} \{setAll ls}"
+Atom x => Atom y => Interpolation (Graph x y s) where
+  interpolate (G t cols ls) = 
+    let as = gtAtoms t
+     in "using \{cols} with \{t} \{setAll ls}"
 
 export
 Atom x => Atom y => IsGraph (Graph x y) where
@@ -126,23 +144,48 @@ export
 deflt : GraphType x y ts -> Selection s ts -> Graph x y s
 deflt t c = G t c []
 
-title : {s : _} -> GraphType x y ts -> Selection s ts -> String
-title Histograms [x]     = colName x
-title Lines [_,y]        = colName y
-title Points [_,y]       = colName y
-title LinesPoints [_,y]  = colName y
-title Impulses [_,y]     = colName y
-title Dots [_,y]         = colName y
-title Steps [_,y]        = colName y
-title FSteps [_,y]       = colName y
-title HiSteps [_,y]      = colName y
-title ErrorBars [_,y]    = colName y
-title ErrorLines [_,y]   = colName y
-title Boxes [_,y]        = colName y
-title FilledCurves [_,y] = colName y
+public export
+data BareCol : (gt : GraphType x y ts) -> Selection s ts -> Type where
+  [search gt]
+  Hi : BareCol Histograms [Var sel]
+  Ls : BareCol Lines [x, Var sel]
+  Ps : BareCol Points [_,Var sel]
+  LP : BareCol LinesPoints [_,Var sel]
+  Im : BareCol Impulses [_,Var sel]
+  Do : BareCol Dots [_,Var sel]
+  St : BareCol Steps [_,Var sel]
+  FS : BareCol FSteps [_,Var sel]
+  HS : BareCol HiSteps [_,Var sel]
+  EB : BareCol ErrorBars [_,Var sel]
+  EL : BareCol ErrorLines [_,Var sel]
+  Bo : BareCol Boxes [_,Var sel]
+  FC : BareCol FilledCurves [_,Var sel]
+
+title :  {s : _}
+      -> (gt   : GraphType x y ts)
+      -> (sel  : Selection s ts)
+      -> (0 bc : BareCol gt sel)
+      -> String
+title Histograms [Var x] Hi     = colName x
+title Lines [_,Var y] Ls        = colName y
+title Points [_,Var y] Ps       = colName y
+title LinesPoints [_,Var y] LP  = colName y
+title Impulses [_,Var y] Im     = colName y
+title Dots [_,Var y] Do         = colName y
+title Steps [_,Var y] St        = colName y
+title FSteps [_,Var y] FS       = colName y
+title HiSteps [_,Var y] HS      = colName y
+title ErrorBars [_,Var y] EB    = colName y
+title ErrorLines [_,Var y] EL   = colName y
+title Boxes [_,Var y] Bo        = colName y
+title FilledCurves [_,Var y] FC = colName y
 
 ||| A titled curve, where the title is taken from
 ||| the corresponding column of the schema.
 export
-titled : {s : _} -> GraphType x y ts -> Selection s ts -> Graph x y s
-titled t c = G t c [Title .= title t c]
+titled :  {s : _}
+       -> (gt   : GraphType x y ts)
+       -> (sel  : Selection s ts)
+       -> (0 bc : BareCol gt sel)
+       => Graph x y s
+titled gt sel = G gt sel [Title .= title gt sel bc]

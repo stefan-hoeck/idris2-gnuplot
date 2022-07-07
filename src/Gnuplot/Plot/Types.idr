@@ -28,7 +28,7 @@ data GraphData : (g : Schema -> Type) -> Type where
   TableData :  {0 g : Schema -> Type}
             -> {0 schema : Schema}
             -> (cols     : Atoms schema)
-            => (file     : Path Abs)
+            => (file     : File Abs)
             -> (table    : Table schema)
             -> (graphs   : List (g schema))
             -> GraphData g
@@ -57,7 +57,7 @@ Monoid (Plot g) where
 tmpFile : Nat -> Body
 tmpFile n = "curve" <+> natBody <+> ".csv"
   where natBody : Body
-        natBody = fromMaybe "0" . body $ show n
+        natBody = fromMaybe "0" . parse $ show n
 
 export
 fromTable : Table s -> Atoms s => List (g s) -> Plot g

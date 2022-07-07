@@ -189,24 +189,6 @@ fromInteger :  (0 x : Integer)
             => Sel s t
 fromInteger _ = fromIndex prf 
 
-namespace Selection
-  ||| A selection of columns in a table.
-  public export
-  data Selection : (s : Schema) -> List Type -> Type where
-    Nil  : Selection s []
-    (::) : Sel s t -> Selection s ts -> Selection s (t :: ts)
-
-export
-Interpolation (Selection s ts) where
-  interpolate []       = ""
-  interpolate [x]      = interpolate x
-  interpolate (h :: t) = "\{h}:\{t}"
-
-public export
-0 SchemaTypes : Schema -> List Type
-SchemaTypes []        = []
-SchemaTypes (_ :> t :: cs) = t :: SchemaTypes cs
-
 --------------------------------------------------------------------------------
 --          Creating Tables
 --------------------------------------------------------------------------------
@@ -226,15 +208,6 @@ param xs fs = map (\v => mapNP ($ v) fs) xs
 --------------------------------------------------------------------------------
 --          Example
 --------------------------------------------------------------------------------
-
-Prices : Schema
-Prices = ["Year" :> Bits16, "PQR" :> Bits32, "XYZ" :> Bits32]
-
-columnsByName : Selection Prices [Bits16, Bits32]
-columnsByName = ["Year", "XYZ"]
-
-columnsByIndex : Selection Prices [Bits16, Bits32]
-columnsByIndex = [1,3]
 
 trigTable : Table [ "x"      :> Double
                   , "sin(x)" :> Double

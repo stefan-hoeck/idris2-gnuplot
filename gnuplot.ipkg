@@ -35,6 +35,7 @@ modules = Gnuplot
         , Gnuplot.Plot.Types
 
         , Gnuplot.Schema
+        , Gnuplot.Schema.Expr
 
         , Gnuplot.Terminal
         , Gnuplot.Util
