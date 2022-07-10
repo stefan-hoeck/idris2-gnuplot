@@ -1,7 +1,10 @@
 module Gnuplot.Options
 
+import public Gnuplot.Options.Color
 import public Gnuplot.Options.Label
+import public Gnuplot.Options.LineStyle
 import public Gnuplot.Options.Range
+import public Gnuplot.Options.Title
 
 import Gnuplot.Util
 
@@ -29,9 +32,9 @@ infix 3 .=
 public export
 record Setting where
   constructor (.=)
-  opt : Option type
-  val : type
-  {auto ip : Interpolation type}
+  opt : Option optionType
+  val : optionType
+  {auto ip : Interpolation optionType}
 
 public export
 0 Settings : Type
@@ -60,3 +63,7 @@ yrange = MkOption "yrange"
 export
 ylabel : Option Label
 ylabel = MkOption "ylabel"
+
+export
+lineStyle : Nat -> Option (List (LineStyle -> LineStyle))
+lineStyle n = MkOption "style line \{show n}"

@@ -1,7 +1,7 @@
 module Gnuplot.Plot.Plot2D
 
 import Gnuplot.Graph.Graph2D
-import Gnuplot.LineSpec
+import Gnuplot.Options
 import Gnuplot.Plot.Types
 import Gnuplot.Schema
 import Gnuplot.Schema.Expr

@@ -3,7 +3,6 @@ module Gnuplot.Graph.Graph2D
 import Gnuplot.Schema.Expr
 import Gnuplot.File
 import Gnuplot.Graph.Interface
-import Gnuplot.LineSpec
 import Gnuplot.Options
 import Gnuplot.Schema
 import Gnuplot.Util
@@ -165,20 +164,20 @@ title :  {s : _}
       -> (gt   : GraphType x y ts)
       -> (sel  : Selection s ts)
       -> (0 bc : BareCol gt sel)
-      -> String
-title Histograms [Var x] Hi     = colName x
-title Lines [_,Var y] Ls        = colName y
-title Points [_,Var y] Ps       = colName y
-title LinesPoints [_,Var y] LP  = colName y
-title Impulses [_,Var y] Im     = colName y
-title Dots [_,Var y] Do         = colName y
-title Steps [_,Var y] St        = colName y
-title FSteps [_,Var y] FS       = colName y
-title HiSteps [_,Var y] HS      = colName y
-title ErrorBars [_,Var y] EB    = colName y
-title ErrorLines [_,Var y] EL   = colName y
-title Boxes [_,Var y] Bo        = colName y
-title FilledCurves [_,Var y] FC = colName y
+      -> Title
+title Histograms [Var x] Hi     = T $ colName x
+title Lines [_,Var y] Ls        = T $ colName y
+title Points [_,Var y] Ps       = T $ colName y
+title LinesPoints [_,Var y] LP  = T $ colName y
+title Impulses [_,Var y] Im     = T $ colName y
+title Dots [_,Var y] Do         = T $ colName y
+title Steps [_,Var y] St        = T $ colName y
+title FSteps [_,Var y] FS       = T $ colName y
+title HiSteps [_,Var y] HS      = T $ colName y
+title ErrorBars [_,Var y] EB    = T $ colName y
+title ErrorLines [_,Var y] EL   = T $ colName y
+title Boxes [_,Var y] Bo        = T $ colName y
+title FilledCurves [_,Var y] FC = T $ colName y
 
 ||| A titled curve, where the title is taken from
 ||| the corresponding column of the schema.
