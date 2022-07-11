@@ -26,6 +26,7 @@ modules = Gnuplot
 
         , Gnuplot.Options
         , Gnuplot.Options.Axis
+        , Gnuplot.Options.Border
         , Gnuplot.Options.Color
         , Gnuplot.Options.Font
         , Gnuplot.Options.Label

@@ -1,6 +1,7 @@
 module Gnuplot.Options
 
 import public Gnuplot.Options.Axis
+import public Gnuplot.Options.Border
 import public Gnuplot.Options.Color
 import public Gnuplot.Options.Label
 import public Gnuplot.Options.LineStyle
@@ -27,14 +28,16 @@ data Option : (unset : Bool) -> (opt : Type) -> Type where
   LogScale : Option False Axis.LogScale
   Stle     : Style t -> Option False t
   Tics     : (axis : Axis) -> Option True TicSettings
+  Border   : (pos  : Maybe Nat) -> Option (isNothing pos) BorderSettings
 
 export
 Interpolation (Option u o) where
-  interpolate (Label x) = "\{x}label"
-  interpolate (Range x) = "\{x}range"
-  interpolate (Tics x)  = "\{x}tics"
-  interpolate LogScale  = "logscale"
-  interpolate (Stle s)  = "style \{s}"
+  interpolate (Label x)  = "\{x}label"
+  interpolate (Range x)  = "\{x}range"
+  interpolate (Tics x)   = "\{x}tics"
+  interpolate LogScale   = "logscale"
+  interpolate (Stle s)   = "style \{s}"
+  interpolate (Border s) = "border \{maybe neutral show s}"
 
 inter : Option b o -> Interpolation o
 inter (Label _)       = %search
@@ -42,6 +45,7 @@ inter (Range _)       = %search
 inter (Tics _)        = %search
 inter LogScale        = %search
 inter (Stle $ Line _) = %search
+inter (Border _)      = %search
 
 --------------------------------------------------------------------------------
 --          Setting
@@ -65,55 +69,55 @@ Settings = List Setting
 --          Settings
 --------------------------------------------------------------------------------
 
-export
+export %inline
 xrange : RangeSettings -> Setting
 xrange = Set (Range X)
 
-export
+export %inline
 yrange : RangeSettings -> Setting
 yrange = Set (Range Y)
 
-export
+export %inline
 zrange : RangeSettings -> Setting
 zrange = Set (Range Z)
 
-export
+export %inline
 cbrange : RangeSettings -> Setting
 cbrange = Set (Range CB)
 
-export
+export %inline
 rrange : RangeSettings -> Setting
 rrange = Set (Range R)
 
-export
+export %inline
 x2range : RangeSettings -> Setting
 x2range = Set (Range X2)
 
-export
+export %inline
 y2range : RangeSettings -> Setting
 y2range = Set (Range Y2)
 
-export
+export %inline
 xtics : TicSettings -> Setting
 xtics = Set (Tics X)
 
-export
+export %inline
 ytics : TicSettings -> Setting
 ytics = Set (Tics Y)
 
-export
+export %inline
 ztics : TicSettings -> Setting
 ztics = Set (Tics Z)
 
-export
+export %inline
 cbtics : TicSettings -> Setting
 cbtics = Set (Tics CB)
 
-export
+export %inline
 x2tics : TicSettings -> Setting
 x2tics = Set (Tics X2)
 
-export
+export %inline
 y2tics : TicSettings -> Setting
 y2tics = Set (Tics Y2)
 
@@ -148,6 +152,10 @@ linestyle n = Set (Stle $ Line n)
 export %inline
 logscale : Axis.LogScale -> Setting
 logscale = Set LogScale
+
+export %inline
+border : BorderSettings -> Setting
+border = Set (Border Nothing)
 
 --------------------------------------------------------------------------------
 --          Options
@@ -185,3 +193,7 @@ namespace Settings
   export %inline
   logscale : Setting
   logscale = Set LogScale (LS "" Nothing)
+
+  export %inline
+  border : Option True BorderSettings
+  border = Border Nothing
