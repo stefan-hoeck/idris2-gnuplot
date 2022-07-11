@@ -24,19 +24,22 @@ public export
 data Option : (unset : Bool) -> (opt : Type) -> Type where
   Label    : (axis : Axis) -> Option True LabelSettings
   Range    : (axis : Axis) -> Option False RangeSettings
-  LogScale : Option False LogScale
+  LogScale : Option False Axis.LogScale
   Stle     : Style t -> Option False t
+  Tics     : (axis : Axis) -> Option True TicSettings
 
 export
 Interpolation (Option u o) where
   interpolate (Label x) = "\{x}label"
   interpolate (Range x) = "\{x}range"
+  interpolate (Tics x)  = "\{x}tics"
   interpolate LogScale  = "logscale"
   interpolate (Stle s)  = "style \{s}"
 
 inter : Option b o -> Interpolation o
 inter (Label _)       = %search
 inter (Range _)       = %search
+inter (Tics _)        = %search
 inter LogScale        = %search
 inter (Stle $ Line _) = %search
 
@@ -90,6 +93,30 @@ export
 y2range : RangeSettings -> Setting
 y2range = Set (Range Y2)
 
+export
+xtics : TicSettings -> Setting
+xtics = Set (Tics X)
+
+export
+ytics : TicSettings -> Setting
+ytics = Set (Tics Y)
+
+export
+ztics : TicSettings -> Setting
+ztics = Set (Tics Z)
+
+export
+cbtics : TicSettings -> Setting
+cbtics = Set (Tics CB)
+
+export
+x2tics : TicSettings -> Setting
+x2tics = Set (Tics X2)
+
+export
+y2tics : TicSettings -> Setting
+y2tics = Set (Tics Y2)
+
 export %inline
 xlabel : LabelSettings -> Setting
 xlabel = Set (Label X)
@@ -119,7 +146,7 @@ linestyle : Nat -> LineStyles -> Setting
 linestyle n = Set (Stle $ Line n)
 
 export %inline
-logscale : LogScale -> Setting
+logscale : Axis.LogScale -> Setting
 logscale = Set LogScale
 
 --------------------------------------------------------------------------------
