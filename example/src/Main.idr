@@ -46,9 +46,9 @@ trigs = functions (linear 4000 (-2*pi) (2*pi))
 
 sinCosTan : Frame2D Double Double
 sinCosTan = frame
-  [ yrange .= (-2, 2)
-  , xlabel .= "x"
-  , ylabel .= "y"
+  [ yrange (-2) 2
+  , xlabel "x"
+  , ylabel "y"
   ] $
   fromTable trigs
     [ titled Lines [Var 1,Var 2]

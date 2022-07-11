@@ -5,6 +5,8 @@ import Gnuplot.Util
 
 %default total
 
+infixr 10 ^
+
 public export
 data FloFun =
     Exp
@@ -22,12 +24,13 @@ Interpolation FloFun where
   interpolate Tan = "tan"
 
 public export
-data NumOp = Plus | Mult
+data NumOp = Plus | Mult | Pow
 
 export
 numOp : NumOp -> String
-numOp Plus  = "+"
-numOp Mult  = "*"
+numOp Plus = "+"
+numOp Mult = "*"
+numOp Pow  = "**"
 
 public export
 data Expr : (s : Schema) -> (t : Type) -> Type where
@@ -59,6 +62,20 @@ FromDouble t => FromDouble (Expr s t) where
   fromDouble = Lit . fromDouble
 
 export
+(^) : Num t => Expr s t -> Expr s t -> Expr s t
+(^) = Arith Pow
+
+export
+hasVar : Expr s t -> Bool
+hasVar X             = False
+hasVar (Lit lit)     = False
+hasVar (Var x)       = True
+hasVar (Flo x y)     = hasVar y
+hasVar (Arith x y z) = hasVar y || hasVar z
+hasVar (Minus x y)   = hasVar x || hasVar y
+hasVar (Div x y)     = hasVar x || hasVar y
+
+export
 Atom t => Interpolation (Expr s t) where
   interpolate X              = "x"
   interpolate (Lit lit)      = print lit
@@ -76,9 +93,9 @@ data Selection : (s : Schema) -> List Type -> Type where
 
 export
 (as : NP Atom ts) => Interpolation (Selection s ts) where
-  interpolate []                     = ""
-  interpolate {as = [_]}    [x]      = interpolate x
-  interpolate {as = _ :: _} (h :: t) = "\{h}:\{t}"
+  interpolate []                      = ""
+  interpolate {as = [_]}    [x]       = interpolate x
+  interpolate {as = _ :: _} (h :: t)  = "\{h}:\{t}"
 
 public export
 0 SchemaTypes : Schema -> List Type

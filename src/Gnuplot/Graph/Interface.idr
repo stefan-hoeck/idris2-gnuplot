@@ -1,5 +1,6 @@
 module Gnuplot.Graph.Interface
 
+import Data.FilePath
 import Gnuplot.Options
 import Gnuplot.Schema
 import Gnuplot.Util
@@ -22,7 +23,7 @@ Interpolation (Command g) where
 public export
 interface IsGraph (0 g : Schema -> Type) where
   command_      : Command g
-  toString      : g s -> String
+  toString      : FilePath -> g s -> String
 
 export
 command : (0 g : Schema -> Type) -> IsGraph g => Command g

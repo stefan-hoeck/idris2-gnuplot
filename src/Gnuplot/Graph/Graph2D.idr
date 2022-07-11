@@ -15,12 +15,12 @@ import Gnuplot.Util
 
 public export
 data GraphType : (x,y : Type) -> List Type -> Type where
---  ListLines       : GraphType Nat y [y]
---  ListPoints      : GraphType Nat y [y]
---  ListLinesPoints : GraphType Nat y [y]
---  ListImpulses    : GraphType Nat y [y]
---  ListDots        : GraphType Nat y [y]
-  Histograms      : GraphType Nat y [y]
+  FunLines       : GraphType x y [y]
+  FunPoints      : GraphType x y [y]
+  FunLinesPoints : GraphType x y [y]
+  FunImpulses    : GraphType x y [y]
+  FunDots        : GraphType x y [y]
+  Histograms     : GraphType x y [y]
   
 --  XErrorBarsRelative   : GraphType x y [x,y,x]
 --  YErrorBarsRelative   : GraphType x y [x,y,y]
@@ -60,12 +60,12 @@ data GraphType : (x,y : Type) -> List Type -> Type where
 
 export
 Interpolation (GraphType x y ts) where
---  interpolate ListLines            = "lines"
---  interpolate ListPoints           = "points"
---  interpolate ListLinesPoints      = "linespoints"
---  interpolate ListImpulses         = "impulses"
---  interpolate ListDots             = "dots"
-  interpolate Histograms           = "histograms"
+  interpolate FunLines            = "lines"
+  interpolate FunPoints           = "points"
+  interpolate FunLinesPoints      = "linespoints"
+  interpolate FunImpulses         = "impulses"
+  interpolate FunDots             = "dots"
+  interpolate Histograms          = "histograms"
 
 --  interpolate XErrorBarsRelative   = "xerrorbars"
 --  interpolate YErrorBarsRelative   = "yerrorbars"
@@ -102,19 +102,24 @@ Interpolation (GraphType x y ts) where
 --  interpolate FilledStripeBelow    = "filledcurves below"
 
 gtAtoms : Atom x => Atom y => GraphType x y ts -> NP Atom ts
-gtAtoms Histograms   = %search
-gtAtoms Lines        = %search
-gtAtoms Points       = %search
-gtAtoms LinesPoints  = %search
-gtAtoms Impulses     = %search
-gtAtoms Dots         = %search
-gtAtoms Steps        = %search
-gtAtoms FSteps       = %search
-gtAtoms HiSteps      = %search
-gtAtoms ErrorBars    = %search
-gtAtoms ErrorLines   = %search
-gtAtoms Boxes        = %search
-gtAtoms FilledCurves = %search
+gtAtoms Histograms     = %search
+gtAtoms Lines          = %search
+gtAtoms Points         = %search
+gtAtoms LinesPoints    = %search
+gtAtoms Impulses       = %search
+gtAtoms Dots           = %search
+gtAtoms Steps          = %search
+gtAtoms FSteps         = %search
+gtAtoms HiSteps        = %search
+gtAtoms ErrorBars      = %search
+gtAtoms ErrorLines     = %search
+gtAtoms Boxes          = %search
+gtAtoms FilledCurves   = %search
+gtAtoms FunLines       = %search
+gtAtoms FunPoints      = %search
+gtAtoms FunLinesPoints = %search
+gtAtoms FunImpulses    = %search
+gtAtoms FunDots        = %search
 
 --------------------------------------------------------------------------------
 --          Graph
@@ -126,18 +131,21 @@ record Graph (x,y : Type) (s : Schema) where
   {0 types : List Type}
   type : GraphType x y types
   cols : Selection s types
-  line : List (Line -> Line)
+  line : LineSettings
 
 export
 Atom x => Atom y => Interpolation (Graph x y s) where
   interpolate (G t cols ls) = 
     let as = gtAtoms t
-     in "using \{cols} with \{t} \{setAll ls}"
+     in "\{cols} with \{t} \{ls}"
 
 export
 Atom x => Atom y => IsGraph (Graph x y) where
   command_      = "plot"
-  toString      = interpolate
+  toString fp g@(G t [x] ls) = case hasVar x of
+    True  => "\"\{fp}\" using \{g}"
+    False => "\{g}"
+  toString fp g              = "\"\{fp}\" using \{g}"
 
 export
 deflt : GraphType x y ts -> Selection s ts -> Graph x y s
@@ -187,4 +195,4 @@ titled :  {s : _}
        -> (sel  : Selection s ts)
        -> (0 bc : BareCol gt sel)
        => Graph x y s
-titled gt sel = G gt sel [Title .= title gt sel bc]
+titled gt sel = G gt sel [title $ title gt sel bc]

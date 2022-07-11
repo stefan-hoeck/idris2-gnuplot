@@ -73,8 +73,9 @@ toFile (FileData _ _)      = Nothing
 toFile (TableData f tbl _) = Just $ MkFile f (printTable tbl)
 
 toStrs : IsGraph g => GraphData g -> List String
-toStrs (FileData f gs)    = map (\g => "\"\{f}\" \{toString g}") gs
-toStrs (TableData f _ gs) = map (\g => "\"\{f}\" \{toString g}") gs
+toStrs (FileData f gs)    = map (toString f) gs
+toStrs (TableData f _ gs) = 
+  let fp = FP $ toPath f in map (toString fp) gs
 
 ||| In contrast to the Display.toScript method instantiation
 ||| this function leaves the options,

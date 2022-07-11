@@ -6,129 +6,125 @@ import Gnuplot.Util
 
 %default total
 
-infix 3 .=
-
-namespace LineStyle
-  ||| TODO: Replace the Nats with something more
-  |||       expressive. We have dependent types after all
-  |||
-  ||| Originally this was Private.LineSpecification.T
-  public export
-  record LineStyle where
-    constructor LS
-    type      : Maybe Nat
-    width     : Maybe Double
-    color     : Maybe Color
-    pointType : Maybe Nat
-    pointSize : Maybe Double
-  
-  export
-  deflt : LineStyle
-  deflt = LS Nothing Nothing Nothing Nothing Nothing
-  
-  export
-  Interpolation LineStyle where
-    interpolate (LS t w c pt ps) = unwords $ concatList [
-        asList (\n => "linetype \{show n}") t
-      , asList (\n => "linewidth \{show n}") w
-      , asList (\n => "linecolor \{n}") c
-      , asList (\n => "pointtype \{show n}") pt
-      , asList (\n => "pointsize \{show n}") ps
-      ]
-
-  export
-  Interpolation (List (LineStyle -> LineStyle)) where
-    interpolate = interpolate . foldl (flip apply) deflt
-  
-  public export
-  data LSProp : Type -> Type where
-    Tpe       : LSProp Nat
-    Width     : LSProp Double
-    Color     : LSProp Color
-    PointType : LSProp Nat
-    PointSize : LSProp Double
-  
-  public export
-  (.=) : LSProp t -> t -> LineStyle -> LineStyle
-  (.=) Tpe v       = {type      := Just v}
-  (.=) Width v     = {width     := Just v}
-  (.=) Color v     = {color     := Just v}
-  (.=) PointType v = {pointType := Just v}
-  (.=) PointSize v = {pointSize := Just v}
-  
-  public export
-  unset : LSProp t -> LineStyle -> LineStyle
-  unset Tpe       = {type      := Nothing}
-  unset Width     = {width     := Nothing}
-  unset Color     = {color     := Nothing}
-  unset PointType = {pointType := Nothing}
-  unset PointSize = {pointSize := Nothing}
-  
-  export
-  setAll : List (LineStyle -> LineStyle) -> LineStyle
-  setAll = foldl (\l,f => f l) deflt
-
-||| TODO: Replace the Nats with something more
-|||       expressive. We have dependent types after all
-|||
-||| Originally this was Private.LineSpecification.T
 public export
-record Line where
-  constructor MkLine
-  style     : Maybe Nat
-  type      : Maybe Nat
-  width     : Maybe Double
-  color     : Maybe Color
-  pointType : Maybe Nat
-  pointSize : Maybe Double
-  title     : Maybe Title
+data LSOption : Type -> Type where
+  Tpe       : LSOption Nat
+  Width     : LSOption Double
+  Color     : LSOption Color
+  PointType : LSOption Nat
+  PointSize : LSOption Double
+
+||| set style line <index> default
+||| set style line <index> {{linetype  | lt} <line_type> | <colorspec>}
+|||                        {{linecolor | lc} <colorspec>}
+|||                        {{linewidth | lw} <line_width>}
+|||                        {{pointtype | pt} <point_type>}
+|||                        {{pointsize | ps} <point_size>}
+|||                        {{pointinterval | pi} <interval>}
+|||                        {{pointnumber | pn} <max_symbols>}
+|||                        {{dashtype | dt} <dashtype>}
+|||                        {palette}
+public export
+record LineStyle where
+  constructor LS
+  option : LSOption lsOptType
+  value  : lsOptType
 
 export
-deflt : Line
-deflt = MkLine Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+Interpolation LineStyle where
+  interpolate (LS Tpe v)       = "linetype \{show v}"
+  interpolate (LS Width v)     = "linewidth \{show v}"
+  interpolate (LS Color v)     = "linecolor \{v}"
+  interpolate (LS PointType v) = "pointtype \{show v}"
+  interpolate (LS PointSize v) = "pointsize \{show v}"
+
+public export
+0 LineStyles : Type
+LineStyles = List LineStyle
 
 export
-Interpolation Line where
-  interpolate (MkLine s t w c pt ps ttl) = unwords $ concatList [
-      asList (\n => "linestyle \{show n}") s
-    , asList (\n => "linetype \{show n}") t
-    , asList (\n => "linewidth \{show n}") w
-    , asList (\n => "linecolor \{n}") c
-    , asList (\n => "pointtype \{show n}") pt
-    , asList (\n => "pointsize \{show n}") ps
-    , asList (\n => "\{n}") ttl
-    ]
+Interpolation LineStyles where
+  interpolate = unwords . map interpolate
+
+--------------------------------------------------------------------------------
+--          Settings
+--------------------------------------------------------------------------------
+
+export %inline
+type : Nat -> LineStyle
+type = LS Tpe
+
+export %inline
+width : Double -> LineStyle
+width = LS Width
+
+export %inline
+color : Color -> LineStyle
+color = LS Color
+
+export %inline
+pointtype : Nat -> LineStyle
+pointtype = LS PointType
+
+export %inline
+pointsize : Double -> LineStyle
+pointsize = LS PointSize
+
+--------------------------------------------------------------------------------
+--          Line
+--------------------------------------------------------------------------------
 
 public export
-data LineProp : Type -> Type where
-  Style     : LineProp Nat
-  Tpe       : LineProp Nat
-  Width     : LineProp Double
-  Color     : LineProp Color
-  PointType : LineProp Nat
-  PointSize : LineProp Double
-  Title     : LineProp Title
+data LineOption : Type -> Type where
+  LSO   : LSOption t -> LineOption t
+  Style : LineOption Nat
+  Title : LineOption Title
 
 public export
-(.=) : LineProp t -> t -> Line -> Line
-(.=) Style v     = {style     := Just v}
-(.=) Tpe v       = {type      := Just v}
-(.=) Width v     = {width     := Just v}
-(.=) Color v     = {color     := Just v}
-(.=) PointType v = {pointType := Just v}
-(.=) PointSize v = {pointSize := Just v}
-(.=) Title v     = {title     := Just v}
-
-public export
-unset : LineProp t -> Line -> Line
-unset Style     = {style     := Nothing}
-unset Tpe       = {type      := Nothing}
-unset Width     = {width     := Nothing}
-unset Color     = {color     := Nothing}
-unset PointType = {pointType := Nothing}
-unset PointSize = {pointSize := Nothing}
-unset Title     = {title     := Nothing}
+record LineSetting where
+  constructor MkLS
+  option : LineOption lineOptType
+  value  : lineOptType
 
 export
-setAll : List (Line -> Line) -> Line
-setAll = foldl (\l,f => f l) deflt
+Interpolation LineSetting where
+  interpolate (MkLS (LSO o) v) = "\{LS o v}"
+  interpolate (MkLS Style v)   = "linestyle \{show v}"
+  interpolate (MkLS Title v)   = "\{v}"
+
+public export
+0 LineSettings : Type
+LineSettings = List LineSetting
+
+export
+Interpolation LineSettings where
+  interpolate = unwords . map interpolate
+
+namespace Line
+  export %inline
+  type : Nat -> LineSetting
+  type = MkLS (LSO Tpe)
+
+  export %inline
+  width : Double -> LineSetting
+  width = MkLS (LSO Width)
+
+  export %inline
+  color : Color -> LineSetting
+  color = MkLS (LSO Color)
+
+  export %inline
+  pointtype : Nat -> LineSetting
+  pointtype = MkLS (LSO PointType)
+
+  export %inline
+  pointsize : Double -> LineSetting
+  pointsize = MkLS (LSO PointSize)
+
+  export %inline
+  notitle : LineSetting
+  notitle = MkLS Title NoTitle
+
+  export %inline
+  title : Title -> LineSetting
+  title = MkLS Title

@@ -25,10 +25,14 @@ modules = Gnuplot
         , Gnuplot.Graph.Interface
 
         , Gnuplot.Options
+        , Gnuplot.Options.Axis
         , Gnuplot.Options.Color
+        , Gnuplot.Options.Font
         , Gnuplot.Options.Label
         , Gnuplot.Options.LineStyle
+        , Gnuplot.Options.Offset
         , Gnuplot.Options.Range
+        , Gnuplot.Options.Tics
         , Gnuplot.Options.Title
 
         , Gnuplot.Plot.Plot2D

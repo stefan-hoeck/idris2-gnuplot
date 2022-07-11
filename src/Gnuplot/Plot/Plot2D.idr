@@ -27,7 +27,7 @@ table :  {0 ts : _}
       => GraphType x y ts
       -> Selection s ts
       -> Table s
-      -> List (Line -> Line)
+      -> LineSettings
       -> Plot2D x y
 table gt sel rows sets =
   fromTable rows [G gt sel sets]
@@ -49,7 +49,7 @@ function :  Atom a
          => GraphType x y [a,b]
          -> List a
          -> (a -> b)
-         -> List (Line -> Line)
+         -> LineSettings
          -> Plot2D x y
 function typ args f =
   table {s = ["x" :> a, "y" :> b]} typ [Var "x",Var "y"] $
@@ -59,7 +59,7 @@ public export
 record Fun a b where
   constructor F
   fun  : a -> b
-  sets : List (Line -> Line)
+  sets : LineSettings
 
 toGraph : GraphType x y ts -> Fun a b -> Selection s ts -> Graph x y s
 toGraph gt (F _ sets) sel = G gt sel sets

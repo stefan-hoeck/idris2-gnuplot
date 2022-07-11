@@ -97,10 +97,22 @@ handlers = [ \e => error (printErr e)
            ]
 
 export
-run : ToScript a => Terminal t -> a -> IO ()
-run term plot =
+run_ : ToScript a => LogLevel -> Terminal t -> a -> IO ()
+run_ lvl term plot =
   let console = stdOut
       fs      = File.local
       sys     = Sys.system
-      log     = filter Info (colorConsoleLogger console)
+      log     = filter lvl (colorConsoleLogger console)
    in runApp handlers $ runScript term plot
+
+export %inline
+run : ToScript a => Terminal t -> a -> IO ()
+run = run_ Info
+
+export %inline
+debug : ToScript a => Terminal t -> a -> IO ()
+debug = run_ Debug
+
+export %inline
+trace : ToScript a => Terminal t -> a -> IO ()
+trace = run_ Trace
