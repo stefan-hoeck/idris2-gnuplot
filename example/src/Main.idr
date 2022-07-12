@@ -29,38 +29,38 @@ run plot =
 --          Plot Examples
 --------------------------------------------------------------------------------
 
-trigs : Table [ "x"            :> Double
-              , "sin(x)"       :> Double
-              , "cos(x)"       :> Double
-              , "tan(x)"       :> Double
-              , "exp(x)"       :> Double
-              , "3 * exp(1/x)" :> Double
-              ]
-trigs = functions (linear 4000 (-2*pi) (2*pi))
-          [ sin
-          , cos
-          , tan
-          , exp
-          , \x => if abs x < 0.0001 then 0 else 0.3 * exp (1 / x)
-          ]
-
-sinCosTan : Frame2D Double Double
-sinCosTan = frame
-  [ yrange (-2) 2
-  , xlabel "x"
-  , ylabel "y"
-  ] $
-  fromTable trigs
-    [ titled Lines [Var 1,Var 2]
-    , titled Lines [Var 1,Var 3]
-    , titled Lines [Var 1,Var 4]
-    , titled Lines [Var 1,Var 5]
-    , titled Lines [Var 1,Var 6]
-    ]
+-- trigs : Table [ "x"            :> Double
+--               , "sin(x)"       :> Double
+--               , "cos(x)"       :> Double
+--               , "tan(x)"       :> Double
+--               , "exp(x)"       :> Double
+--               , "3 * exp(1/x)" :> Double
+--               ]
+-- trigs = functions (linear 4000 (-2*pi) (2*pi))
+--           [ sin
+--           , cos
+--           , tan
+--           , exp
+--           , \x => if abs x < 0.0001 then 0 else 0.3 * exp (1 / x)
+--           ]
+-- 
+-- sinCosTan : Frame2D Double Double
+-- sinCosTan = frame
+--   [ yrange (-2) 2
+--   , xlabel "x"
+--   , ylabel "y"
+--   ] $
+--   fromTable trigs
+--     [ titled Lines [Var 1,Var 2]
+--     , titled Lines [Var 1,Var 3]
+--     , titled Lines [Var 1,Var 4]
+--     , titled Lines [Var 1,Var 5]
+--     , titled Lines [Var 1,Var 6]
+--     ]
 
 --------------------------------------------------------------------------------
 --          Plot Examples
 --------------------------------------------------------------------------------
 
-main : IO ()
-main = run sinCosTan
+-- main : IO ()
+-- main = run sinCosTan

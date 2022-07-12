@@ -43,70 +43,70 @@ table' :  {0 ts : _}
        -> Plot2D x y
 table' gt sel rows = table gt sel rows []
 
-export
-function :  Atom a
-         => Atom b
-         => GraphType x y [a,b]
-         -> List a
-         -> (a -> b)
-         -> LineSettings
-         -> Plot2D x y
-function typ args f =
-  table {s = ["x" :> a, "y" :> b]} typ [Var "x",Var "y"] $
-    map (\va => [va,f va]) args
-
-public export
-record Fun a b where
-  constructor F
-  fun  : a -> b
-  sets : LineSettings
-
-toGraph : GraphType x y ts -> Fun a b -> Selection s ts -> Graph x y s
-toGraph gt (F _ sets) sel = G gt sel sets
-
-0 FunSchema' : Nat -> (b : Type) -> List c -> Schema
-FunSchema' k b []        = []
-FunSchema' k b (_ :: xs) = show k :> b :: FunSchema' (S k) b xs
-
-0 FunSchema : (a,b : Type) -> List c -> Schema
-FunSchema a b cs = "0" :> a :: FunSchema' 1 b cs
-
-funAtoms' : Atom b => (k : Nat) -> (fs : List c) -> Atoms (FunSchema' k b fs)
-funAtoms' k []        = []
-funAtoms' k (x :: xs) = %search :: funAtoms' (S k) xs
-
-funAtoms :  Atom a => Atom b => (fs : List c) -> Atoms (FunSchema a b fs)
-funAtoms fs = %search :: funAtoms' 1 fs
-
-funRow' :  (0 k : Nat)
-        -> a
-        -> (fs : List (Fun a b))
-        -> Row (FunSchema' k b fs)
-funRow' k x []            = []
-funRow' k x (F f _ :: fs) = f x :: funRow' (S k) x fs
-
-funRow : (fs : List (Fun a b)) -> a -> Row (FunSchema a b fs)
-funRow fs x = x :: funRow' 1 x fs
-
-funTbl : List a -> (fs : List (Fun a b)) -> Table (FunSchema a b fs)
-funTbl as fs = map (funRow fs) as
-
-sels' :  (0 k : Nat)
-      -> (fs : List x)
-      -> List (Sel (FunSchema' k b fs) b)
-sels' _ []        = []
-sels' k (_ :: xs) = MkSel (show k) Here :: map inc (sels' (S k) xs)
-
-sels : (fs : List x) -> List (Selection (FunSchema a b fs) [a,b])
-sels fs = map (\s => [Var 1, Var $ inc s]) (sels' 1 fs)
-
-export
-functions :  Atom a
-          => Atom b
-          => GraphType x y [a,b]
-          -> List a
-          -> List (Fun a b)
-          -> Plot2D x y
-functions gt as fs =
-  let atom = funAtoms {a} {b} fs
-   in fromTable (funTbl as fs) (zipWith (toGraph gt) fs (sels fs))
+-- export
+-- function :  Atom a
+--          => Atom b
+--          => GraphType x y [a,b]
+--          -> List a
+--          -> (a -> b)
+--          -> LineSettings
+--          -> Plot2D x y
+-- function typ args f =
+--   table {s = ["x" :> a, "y" :> b]} typ [Var "x",Var "y"] $
+--     map (\va => [va,f va]) args
+-- 
+-- public export
+-- record Fun a b where
+--   constructor F
+--   fun  : a -> b
+--   sets : LineSettings
+-- 
+-- toGraph : GraphType x y ts -> Fun a b -> Selection s ts -> Graph x y s
+-- toGraph gt (F _ sets) sel = G gt sel sets
+-- 
+-- 0 FunSchema' : Nat -> (b : Type) -> List c -> Schema
+-- FunSchema' k b []        = []
+-- FunSchema' k b (_ :: xs) = show k :> b :: FunSchema' (S k) b xs
+-- 
+-- 0 FunSchema : (a,b : Type) -> List c -> Schema
+-- FunSchema a b cs = "0" :> a :: FunSchema' 1 b cs
+-- 
+-- funAtoms' : Atom b => (k : Nat) -> (fs : List c) -> Atoms (FunSchema' k b fs)
+-- funAtoms' k []        = []
+-- funAtoms' k (x :: xs) = %search :: funAtoms' (S k) xs
+-- 
+-- funAtoms :  Atom a => Atom b => (fs : List c) -> Atoms (FunSchema a b fs)
+-- funAtoms fs = %search :: funAtoms' 1 fs
+-- 
+-- funRow' :  (0 k : Nat)
+--         -> a
+--         -> (fs : List (Fun a b))
+--         -> Row (FunSchema' k b fs)
+-- funRow' k x []            = []
+-- funRow' k x (F f _ :: fs) = f x :: funRow' (S k) x fs
+-- 
+-- funRow : (fs : List (Fun a b)) -> a -> Row (FunSchema a b fs)
+-- funRow fs x = x :: funRow' 1 x fs
+-- 
+-- funTbl : List a -> (fs : List (Fun a b)) -> Table (FunSchema a b fs)
+-- funTbl as fs = map (funRow fs) as
+-- 
+-- sels' :  (0 k : Nat)
+--       -> (fs : List x)
+--       -> List (Sel (FunSchema' k b fs) b)
+-- sels' _ []        = []
+-- sels' k (_ :: xs) = MkSel (show k) Here :: map inc (sels' (S k) xs)
+-- 
+-- sels : (fs : List x) -> List (Selection (FunSchema a b fs) [a,b])
+-- sels fs = map (\s => [Var 1, Var $ inc s]) (sels' 1 fs)
+-- 
+-- export
+-- functions :  Atom a
+--           => Atom b
+--           => GraphType x y [a,b]
+--           -> List a
+--           -> List (Fun a b)
+--           -> Plot2D x y
+-- functions gt as fs =
+--   let atom = funAtoms {a} {b} fs
+--    in fromTable (funTbl as fs) (zipWith (toGraph gt) fs (sels fs))

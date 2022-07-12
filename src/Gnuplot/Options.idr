@@ -23,32 +23,35 @@ Interpolation (Style t) where
 
 public export
 data Option : (unset : Bool) -> (opt : Type) -> Type where
+  Border   : (pos  : Maybe Nat) -> Option (isNothing pos) BorderSettings
   Label    : (axis : Axis) -> Option True LabelSettings
-  Range    : (axis : Axis) -> Option False RangeSettings
   LineType : (n : Nat) -> Option False LineStyles
   LogScale : Option False Axis.LogScale
+  Range    : (axis : Axis) -> Option False RangeSettings
+  Samples  : Option False Nat
   Stle     : Style t -> Option False t
   Tics     : (axis : Axis) -> Option True TicSettings
-  Border   : (pos  : Maybe Nat) -> Option (isNothing pos) BorderSettings
 
 export
 Interpolation (Option u o) where
-  interpolate (Label x)    = "\{x}label"
-  interpolate (Range x)    = "\{x}range"
-  interpolate (Tics x)     = "\{x}tics"
-  interpolate (LineType n) = "linetype \{show n}"
-  interpolate LogScale     = "logscale"
-  interpolate (Stle s)     = "style \{s}"
   interpolate (Border s)   = "border \{maybe neutral show s}"
+  interpolate (Label x)    = "\{x}label"
+  interpolate (LineType n) = "linetype \{show n}"
+  interpolate (Range x)    = "\{x}range"
+  interpolate (Stle s)     = "style \{s}"
+  interpolate (Tics x)     = "\{x}tics"
+  interpolate LogScale     = "logscale"
+  interpolate Samples      = "samples"
 
 inter : Option b o -> Interpolation o
-inter (Label _)       = %search
-inter (Range _)       = %search
-inter (Tics _)        = %search
-inter (LineType _)    = %search
-inter LogScale        = %search
-inter (Stle $ Line _) = %search
 inter (Border _)      = %search
+inter (Label _)       = %search
+inter (LineType _)    = %search
+inter (Range _)       = %search
+inter (Stle $ Line _) = %search
+inter (Tics _)        = %search
+inter LogScale        = %search
+inter Samples         = %search
 
 --------------------------------------------------------------------------------
 --          Setting
@@ -163,6 +166,10 @@ logscale = Set LogScale
 export %inline
 border : BorderSettings -> Setting
 border = Set (Border Nothing)
+
+export %inline
+samples : Nat -> Setting
+samples = Set Samples
 
 --------------------------------------------------------------------------------
 --          Options

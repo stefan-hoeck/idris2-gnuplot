@@ -16,7 +16,7 @@ import Gnuplot.Util
 --------------------------------------------------------------------------------
 
 public export
-data Lit = LInt Integer | LDbl Double
+data Lit = LInt Integer | LDbl Double | LBool Bool | LString String
 
 public export
 interface Atom a where
@@ -25,6 +25,14 @@ interface Atom a where
 public export %inline
 Atom Double where
   toLit = LDbl
+
+public export %inline
+Atom Bool where
+  toLit = LBool
+
+public export %inline
+Atom String where
+  toLit = LString
 
 public export %inline
 Atom Integer where
@@ -69,8 +77,11 @@ Atom Nat where
 export
 print : Atom a => a -> String
 print v = case toLit v of
-  LInt n => show n
-  LDbl d => show d
+  LInt     n     => show n
+  LDbl     d     => show d
+  LString  s     => quote s
+  LBool    True  => "1"
+  LBool    False => "0"
 
 --------------------------------------------------------------------------------
 --          Data Tables
