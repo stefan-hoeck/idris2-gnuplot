@@ -142,10 +142,11 @@ Atom x => Atom y => Interpolation (Graph x y s) where
 export
 Atom x => Atom y => IsGraph (Graph x y) where
   command_      = "plot"
-  toString fp g@(G t [x] ls) = case hasVar x of
+  toString (Just fp) g@(G t [x] ls) = case hasVar x of
     True  => "\"\{fp}\" using \{g}"
     False => "\{g}"
-  toString fp g              = "\"\{fp}\" using \{g}"
+  toString (Just fp) g              = "\"\{fp}\" using \{g}"
+  toString Nothing g                = "\{g}"
 
 export
 deflt : GraphType x y ts -> Selection s ts -> Graph x y s

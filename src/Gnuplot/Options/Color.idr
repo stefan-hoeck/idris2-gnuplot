@@ -35,7 +35,7 @@ data Color : Type where
 export
 Interpolation Color where
   interpolate (Name n)        = "rgb \{quote n}"
-  interpolate (RGB8 r g b)    = "rgb 0x\{hex r}\{hex g}\{hex b}"
+  interpolate (RGB8 r g b)    = "rgb \"0x\{hex r}\{hex g}\{hex b}\""
   interpolate (PaletteFrac x) = "palette frac \{show x}"
 
 export

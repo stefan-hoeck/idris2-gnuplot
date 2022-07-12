@@ -112,6 +112,26 @@ inc (Arith x y z) = Arith x (inc y) (inc z)
 inc (Minus x y)   = Minus (inc x) (inc y)
 inc (Div x y)     = Div (inc x) (inc y)
 
+export %inline
+sin : Expr s Double -> Expr s Double
+sin = Flo Sin
+
+export %inline
+cos : Expr s Double -> Expr s Double
+cos = Flo Cos
+
+export %inline
+tan : Expr s Double -> Expr s Double
+tan = Flo Tan
+
+export %inline
+exp : Expr s Double -> Expr s Double
+exp = Flo Exp
+
+export %inline
+log : Expr s Double -> Expr s Double
+log = Flo Log
+
 
 --------------------------------------------------------------------------------
 --          Example

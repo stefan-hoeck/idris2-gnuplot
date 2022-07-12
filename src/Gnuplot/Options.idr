@@ -25,6 +25,7 @@ public export
 data Option : (unset : Bool) -> (opt : Type) -> Type where
   Label    : (axis : Axis) -> Option True LabelSettings
   Range    : (axis : Axis) -> Option False RangeSettings
+  LineType : (n : Nat) -> Option False LineStyles
   LogScale : Option False Axis.LogScale
   Stle     : Style t -> Option False t
   Tics     : (axis : Axis) -> Option True TicSettings
@@ -32,17 +33,19 @@ data Option : (unset : Bool) -> (opt : Type) -> Type where
 
 export
 Interpolation (Option u o) where
-  interpolate (Label x)  = "\{x}label"
-  interpolate (Range x)  = "\{x}range"
-  interpolate (Tics x)   = "\{x}tics"
-  interpolate LogScale   = "logscale"
-  interpolate (Stle s)   = "style \{s}"
-  interpolate (Border s) = "border \{maybe neutral show s}"
+  interpolate (Label x)    = "\{x}label"
+  interpolate (Range x)    = "\{x}range"
+  interpolate (Tics x)     = "\{x}tics"
+  interpolate (LineType n) = "linetype \{show n}"
+  interpolate LogScale     = "logscale"
+  interpolate (Stle s)     = "style \{s}"
+  interpolate (Border s)   = "border \{maybe neutral show s}"
 
 inter : Option b o -> Interpolation o
 inter (Label _)       = %search
 inter (Range _)       = %search
 inter (Tics _)        = %search
+inter (LineType _)    = %search
 inter LogScale        = %search
 inter (Stle $ Line _) = %search
 inter (Border _)      = %search
@@ -148,6 +151,10 @@ cblabel = Set (Label CB)
 export %inline
 linestyle : Nat -> LineStyles -> Setting
 linestyle n = Set (Stle $ Line n)
+
+export %inline
+linetype : Nat -> LineStyles -> Setting
+linetype n = Set (LineType n)
 
 export %inline
 logscale : Axis.LogScale -> Setting

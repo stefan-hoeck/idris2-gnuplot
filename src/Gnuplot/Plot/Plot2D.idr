@@ -110,31 +110,3 @@ functions :  Atom a
 functions gt as fs =
   let atom = funAtoms {a} {b} fs
    in fromTable (funTbl as fs) (zipWith (toGraph gt) fs (sels fs))
-
--- 
--- export
--- parameterFunction :  Atom a
---                   => GraphType x y [a]
---                   -> List t
---                   -> (t -> a)
---                   -> Plot2D x y
--- parameterFunction gt ts f = 
---   table {s = ["x" :> a]} gt ["x"] $ map (\vt => [f vt]) ts
-
--- fromFile :
---    (Atom.C x, Atom.C y) =>
---    Type.T x y a -> FilePath -> Col.T a -> T x y
--- fromFile typ filename (Col.Cons cs) =
---    Plot.fromGraphs filename [Graph.deflt typ cs]
--- 
--- listFromFile ::
---    (Atom.C i, Atom.C y) =>
---    Type.T i y y -> FilePath -> Int -> T i y
--- listFromFile typ filename column =
---    fromFile typ filename (Col.atom column)
--- 
--- pathFromFile ::
---    (Atom.C x, Atom.C y) =>
---    Type.T x y (x,y) -> FilePath -> Int -> Int -> T x y
--- pathFromFile typ filename columnX columnY =
---    fromFile typ filename (Col.pair (Col.atom columnX) (Col.atom columnY))

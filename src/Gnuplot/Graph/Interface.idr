@@ -23,7 +23,7 @@ Interpolation (Command g) where
 public export
 interface IsGraph (0 g : Schema -> Type) where
   command_      : Command g
-  toString      : FilePath -> g s -> String
+  toString      : Maybe FilePath -> g s -> String
 
 export
 command : (0 g : Schema -> Type) -> IsGraph g => Command g

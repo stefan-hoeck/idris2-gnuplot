@@ -33,6 +33,8 @@ data GraphData : (g : Schema -> Type) -> Type where
             -> (graphs   : List (g schema))
             -> GraphData g
 
+  Functions : List (g []) -> GraphData g
+
 ||| A plot displaying several graphs.
 public export
 record Plot (g : Schema -> Type) where
@@ -68,14 +70,20 @@ export
 fromFile : FilePath -> List (g s) -> Plot g
 fromFile name gs = pure [FileData name gs]
 
+export
+functions : List (g []) -> Plot g
+functions gs = pure [Functions gs]
+
 toFile : GraphData g -> Maybe GPFile
 toFile (FileData _ _)      = Nothing
+toFile (Functions _)       = Nothing
 toFile (TableData f tbl _) = Just $ MkFile f (printTable tbl)
 
 toStrs : IsGraph g => GraphData g -> List String
-toStrs (FileData f gs)    = map (toString f) gs
+toStrs (FileData f gs)    = map (toString $ Just f) gs
 toStrs (TableData f _ gs) = 
-  let fp = FP $ toPath f in map (toString fp) gs
+  let fp = FP $ toPath f in map (toString $ Just fp) gs
+toStrs (Functions gs) = map (toString Nothing) gs
 
 ||| In contrast to the Display.toScript method instantiation
 ||| this function leaves the options,
