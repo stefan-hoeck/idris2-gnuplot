@@ -101,53 +101,53 @@ Interpolation (GraphType x y ts) where
 --  interpolate FilledStripeAbove    = "filledcurves above"
 --  interpolate FilledStripeBelow    = "filledcurves below"
 
-gtAtoms : Atom x => Atom y => GraphType x y ts -> NP Atom ts
-gtAtoms Histograms     = %search
-gtAtoms Lines          = %search
-gtAtoms Points         = %search
-gtAtoms LinesPoints    = %search
-gtAtoms Impulses       = %search
-gtAtoms Dots           = %search
-gtAtoms Steps          = %search
-gtAtoms FSteps         = %search
-gtAtoms HiSteps        = %search
-gtAtoms ErrorBars      = %search
-gtAtoms ErrorLines     = %search
-gtAtoms Boxes          = %search
-gtAtoms FilledCurves   = %search
-gtAtoms FunLines       = %search
-gtAtoms FunPoints      = %search
-gtAtoms FunLinesPoints = %search
-gtAtoms FunImpulses    = %search
-gtAtoms FunDots        = %search
-
---------------------------------------------------------------------------------
---          Graph
---------------------------------------------------------------------------------
-
-public export
-record Graph (x,y : Type) (s : Schema) where
-  constructor G
-  {0 types : List Type}
-  type : GraphType x y types
-  cols : Selection s types
-  line : LineSettings
-
-export
-Atom x => Atom y => Interpolation (Graph x y s) where
-  interpolate (G t cols ls) = 
-    let as = gtAtoms t
-     in "\{cols} with \{t} \{ls}"
-
-export
-Atom x => Atom y => IsGraph (Graph x y) where
-  command_      = "plot"
-  toString (Just fp) g@(G t [x] ls) = case hasVar x of
-    True  => "\"\{fp}\" using \{g}"
-    False => "\{g}"
-  toString (Just fp) g              = "\"\{fp}\" using \{g}"
-  toString Nothing g                = "\{g}"
-
-export
-deflt : GraphType x y ts -> Selection s ts -> Graph x y s
-deflt t c = G t c []
+-- gtAtoms : Atom x => Atom y => GraphType x y ts -> NP Atom ts
+-- gtAtoms Histograms     = %search
+-- gtAtoms Lines          = %search
+-- gtAtoms Points         = %search
+-- gtAtoms LinesPoints    = %search
+-- gtAtoms Impulses       = %search
+-- gtAtoms Dots           = %search
+-- gtAtoms Steps          = %search
+-- gtAtoms FSteps         = %search
+-- gtAtoms HiSteps        = %search
+-- gtAtoms ErrorBars      = %search
+-- gtAtoms ErrorLines     = %search
+-- gtAtoms Boxes          = %search
+-- gtAtoms FilledCurves   = %search
+-- gtAtoms FunLines       = %search
+-- gtAtoms FunPoints      = %search
+-- gtAtoms FunLinesPoints = %search
+-- gtAtoms FunImpulses    = %search
+-- gtAtoms FunDots        = %search
+-- 
+-- --------------------------------------------------------------------------------
+-- --          Graph
+-- --------------------------------------------------------------------------------
+-- 
+-- public export
+-- record Graph (x,y : Type) (s : Schema) where
+--   constructor G
+--   {0 types : List Type}
+--   type : GraphType x y types
+--   cols : Selection s types
+--   line : LineSettings
+-- 
+-- export
+-- Atom x => Atom y => Interpolation (Graph x y s) where
+--   interpolate (G t cols ls) = 
+--     let as = gtAtoms t
+--      in "\{cols} with \{t} \{ls}"
+-- 
+-- export
+-- Atom x => Atom y => IsGraph (Graph x y) where
+--   command_      = "plot"
+--   toString (Just fp) g@(G t [x] ls) = case hasVar x of
+--     True  => "\"\{fp}\" using \{g}"
+--     False => "\{g}"
+--   toString (Just fp) g              = "\"\{fp}\" using \{g}"
+--   toString Nothing g                = "\{g}"
+-- 
+-- export
+-- deflt : GraphType x y ts -> Selection s ts -> Graph x y s
+-- deflt t c = G t c []
