@@ -8,188 +8,173 @@ import Gnuplot.Util
 infixr 10 ^
 
 public export
-data FloFun =
-    Exp
-  | Log
-  | Sin
-  | Cos
-  | Tan
-
-export
-Interpolation FloFun where
-  interpolate Exp = "exp"
-  interpolate Log = "log"
-  interpolate Sin = "sin"
-  interpolate Cos = "cos"
-  interpolate Tan = "tan"
+0 I : Universe -> Universe
+I u = u
 
 public export
-data NumOp = Plus | Mult | Pow
-
-export
-Interpolation NumOp where
-  interpolate Plus = "+"
-  interpolate Mult = "*"
-  interpolate Pow  = "**"
+0 Const : Universe -> Universe -> Universe
+Const u _ = u
 
 public export
-data IntUnary = Fact | Compl
+data Fun :  (constraint : Universe -> Type)
+         -> (result     : Universe -> Universe)
+         -> Type where
+    Exp   : Fun Num (Const GDbl)
+    Log   : Fun Num (Const GDbl)
+    Sin   : Fun Num (Const GDbl)
+    Cos   : Fun Num (Const GDbl)
+    Tan   : Fun Num (Const GDbl)
+    Fact  : Fun (=== GNat) I
+    Compl : Fun Integral I
+    Not   : Fun (=== GBool) I
+
+export
+Interpolation (Fun c r) where
+  interpolate Exp   = "exp"
+  interpolate Log   = "log"
+  interpolate Sin   = "sin"
+  interpolate Cos   = "cos"
+  interpolate Tan   = "tan"
+  interpolate Fact  = "!"
+  interpolate Compl = "~"
+  interpolate Not   = "!"
 
 public export
-data IntBinary = Mod | Shr | Shl | And | Or | Xor
+data BinOp :  (constraint : Universe -> Type)
+           -> (result     : Universe -> Universe)
+           -> Type where
+  Plus  : BinOp Num I
+  Mult  : BinOp Num I
+  Pow   : BinOp Num I
+  Minus : BinOp Neg I
+  Div   : BinOp Num (Const GDbl)
+  Mod   : BinOp Integral I
+  Shr   : BinOp Integral I
+  Shl   : BinOp Integral I
+  And   : BinOp Integral I
+  Or    : BinOp Integral I
+  Xor   : BinOp Integral I
+  LAnd  : BinOp (=== GBool) I
+  LOr   : BinOp (=== GBool) I
+  Eq    : BinOp Num (Const GBool)
+  Neq   : BinOp Num (Const GBool)
+  GT    : BinOp Num (Const GBool)
+  LT    : BinOp Num (Const GBool)
+  GTE   : BinOp Num (Const GBool)
+  LTE   : BinOp Num (Const GBool)
+  Dot   : BinOp (=== GString) (Const GString)
 
 export
-Interpolation IntBinary where
-  interpolate Mod  = "%"
-  interpolate Shr  = ">>"
-  interpolate Shl  = "<<"
-  interpolate And  = "&"
-  interpolate Or   = "|"
-  interpolate Xor  = "^"
+Interpolation (BinOp c r) where
+  interpolate Plus  = "+"
+  interpolate Mult  = "*"
+  interpolate Pow   = "**"
+  interpolate Div   = "/"
+  interpolate Minus = "-"
+  interpolate Mod   = "%"
+  interpolate Shr   = ">>"
+  interpolate Shl   = "<<"
+  interpolate And   = "&"
+  interpolate Or    = "|"
+  interpolate Xor   = "^"
+  interpolate LAnd  = "&&"
+  interpolate LOr   = "||"
+  interpolate Eq    = "=="
+  interpolate Neq   = "!="
+  interpolate GT    = ">"
+  interpolate LT    = "<"
+  interpolate GTE   = ">= "
+  interpolate LTE   = "<="
+  interpolate Dot   = "."
 
 public export
-data BoolUnary = Not
-
-public export
-data BoolBinary = LAnd | LOr
-
-export
-Interpolation BoolBinary where
-  interpolate LAnd = "&&"
-  interpolate LOr  = "||"
-
-
-public export
-data Comp = Eq | Neq | GT | LT | GTE | LTE
+data Expr : (s : Schema) -> (u : Universe) -> Type where
+  X    : Expr s u
+  Lit  : (u : Universe) -> (lit : IdrisType u) -> Expr s u
+  NCol : (0 _ : Num u) => Sel s u -> Expr s u
+  SCol : Sel s GString -> Expr s GString
+  EFun : Fun c f -> Expr s u -> (0 _ : c u) => Expr s (f u)
+  EOp  : BinOp c f -> Expr s u -> Expr s u -> (0 _ : c u) => Expr s (f u)
+  Ite  : Expr s GBool -> Expr s u -> Expr s u -> Expr s u
 
 export
-Interpolation Comp where
-  interpolate Eq  = "=="
-  interpolate Neq = "!="
-  interpolate GT  = ">"
-  interpolate LT  = "<"
-  interpolate GTE = ">="
-  interpolate LTE = "<="
+{u : _} -> Num u => Num (Expr s u) where
+  fromInteger {u = GNat}   = Lit GNat . fromInteger
+  fromInteger {u = GInt}   = Lit GInt . fromInteger
+  fromInteger {u = GBits8} = Lit GBits8 . fromInteger
+  fromInteger {u = GDbl}   = Lit GDbl . fromInteger
+  fromInteger {u = GBool} impossible
+  fromInteger {u = GString} impossible
 
-public export
-data Expr : (s : Schema) -> (t : Type) -> Type where
-  X      : Expr s t
-  Lit    : (lit : t) -> Expr s t
-  NumCol : (0 num : Num t) => Sel s t -> Expr s t
-  StrCol : Sel s String -> Expr s String
-  Flo    : FloFun -> Expr s Double -> Expr s Double
-  Arith  : (0 num : Num t) => NumOp -> Expr s t -> Expr s t -> Expr s t
-  Minus  : (0 neg : Neg t) => Expr s t -> Expr s t -> Expr s t
-  Int1   : (0 int : Integral t) => IntUnary -> Expr s t -> Expr s t
-  Int2   : (0 int : Integral t) => IntBinary -> Expr s t -> Expr s t -> Expr s t
-  Bool1  : BoolUnary -> Expr s Bool -> Expr s Bool
-  Bool2  : BoolBinary -> Expr s Bool -> Expr s Bool -> Expr s Bool
-  Div    : (0 fra : Fractional t) => Expr s t -> Expr s t -> Expr s t
-  Cmp    : (0 num : Num t) => Atom t => Comp -> Expr s t -> Expr s t -> Expr s Bool
-  Ite    : Expr s Bool -> Expr s t -> Expr s t -> Expr s t
-  Concat : Expr s String -> Expr s String -> Expr s String
+  x + y = EOp Plus x y
+  x * y = EOp Mult x y
 
 export
-Num t => Num (Expr s t) where
-  fromInteger = Lit . fromInteger
-  (+) = Arith Plus
-  (*) = Arith Mult
-
-export
-Neg t => Neg (Expr s t) where
-  (-)    = Minus
-  negate = Minus 0
-
-export
-Fractional t => Fractional (Expr s t) where
-  (/)    = Div
-
-export
-FromDouble t => FromDouble (Expr s t) where
-  fromDouble = Lit . fromDouble
-
-export
-FromString t => FromString (Expr s t) where
-  fromString = Lit . fromString
-
-export
-(^) : Num t => Expr s t -> Expr s t -> Expr s t
-(^) = Arith Pow
-
-export
-hasVar : Expr s t -> Bool
-hasVar X             = False
-hasVar (Lit lit)     = False
-hasVar (NumCol x)    = True
-hasVar (StrCol x)    = True
-hasVar (Flo x y)     = hasVar y
-hasVar (Arith x y z) = hasVar y || hasVar z
-hasVar (Minus x y)   = hasVar x || hasVar y
-hasVar (Div x y)     = hasVar x || hasVar y
-hasVar (Bool1 _ x)   = hasVar x
-hasVar (Bool2 _ x y) = hasVar x || hasVar y
-hasVar (Int1 _ x)    = hasVar x
-hasVar (Int2 _ x y)  = hasVar x || hasVar y
-hasVar (Cmp _ x y)   = hasVar x || hasVar y
-hasVar (Ite x y z)   = hasVar x || hasVar y || hasVar z
-hasVar (Concat x y)  = hasVar x || hasVar y
-
-ip : Atom t => Expr s t -> String
-ip X              = "x"
-ip (Lit lit)      = print lit
-ip (NumCol x)     = "column(\{x})"
-ip (StrCol x)     = "strcol(\{x})"
-ip (Flo x y)      = "\{x}(\{ip y})"
-ip (Arith op x y) = "(\{ip x}) \{op} (\{ip y})"
-ip (Minus x y)    = "(\{ip x}) - (\{ip y})"
-ip (Div x y)      = "(\{ip x}) / (\{ip y})"
-ip (Bool1 Not x)  = "!(\{ip x})"
-ip (Int1 Fact x)  = "(\{ip x})!"
-ip (Int1 Compl x) = "~(\{ip x})"
-ip (Int2 op x y)  = "(\{ip x}) \{op} (\{ip y})"
-ip (Bool2 op x y) = "(\{ip x}) \{op} (\{ip y})"
-ip (Cmp op x y)   = "(\{ip x}) \{op} (\{ip y})"
-ip (Ite x y z)    = "(\{ip x}) ? (\{ip y}) : (\{ip z})"
-ip (Concat x y)   = "(\{ip x}).(\{ip y})"
+{u : _} -> Neg u => Neg (Expr s u) where
+  x - y    = EOp Minus x y
+  negate v = EOp Minus 0 v
 
 export %inline
-Atom t => Interpolation (Expr s t) where
+(/) : (0 _ : Num u) => Expr s u -> Expr s u -> Expr s GDbl
+x / y = EOp Div x y
+
+export %inline
+FromDouble (Expr s GDbl) where
+  fromDouble = Lit GDbl
+
+export %inline
+FromString (Expr s GString) where
+  fromString = Lit GString
+
+export %inline
+(^) : Num u => Expr s u -> Expr s u -> Expr s u
+x ^ y = EOp Pow x y
+
+export
+hasVar : Expr s u -> Bool
+hasVar X           = False
+hasVar (Lit _ _)   = False
+hasVar (NCol _)    = True
+hasVar (SCol _)    = True
+hasVar (EFun _ y)  = hasVar y
+hasVar (EOp _ y z) = hasVar y || hasVar z
+hasVar (Ite x y z) = hasVar x || hasVar y || hasVar z
+
+ip : Expr s u -> String
+ip X              = "x"
+ip (Lit u lit)    = print u lit
+ip (NCol x)       = "column(\{x})"
+ip (SCol x)       = "strcol(\{x})"
+ip (EFun Fact x)  = "(\{ip x})!"
+ip (EFun f x)     = "\{f}(\{ip x})"
+ip (EOp op x y)   = "(\{ip x}) \{op} (\{ip y})"
+ip (Ite x y z)    = "(\{ip x}) ? (\{ip y}) : (\{ip z})"
+
+export %inline
+Interpolation (Expr s u) where
   interpolate       = ip
 
-||| A selection of columns in a table.
+||| Entries in a `using` clause (see `help plot using`).
 public export
-data Selection : (s : Schema) -> List Type -> Type where
-  Nil  : Selection s []
-  (::) : Expr s t -> Selection s ts -> Selection s (t :: ts)
+data Entries : (s : Schema) -> List Universe -> Type where
+  Nil  : Entries s []
+  (::) : Expr s u -> Entries s us -> Entries s (u :: us)
 
 export
-(as : NP Atom ts) => Interpolation (Selection s ts) where
-  interpolate []                      = ""
-  interpolate {as = [_]}    [x]       = interpolate x
-  interpolate {as = _ :: _} (h :: t)  = "(\{h}):(\{t})"
-
-public export
-0 SchemaTypes : Schema -> List Type
-SchemaTypes []        = []
-SchemaTypes (_ :> t :: cs) = t :: SchemaTypes cs
+Interpolation (Entries s us) where
+  interpolate []        = ""
+  interpolate [x]       = interpolate x
+  interpolate (h :: t)  = "(\{h}):(\{t})"
 
 export
-inc : Expr s t -> Expr (h :: s) t
-inc X              = X
-inc (Lit lit)      = Lit lit
-inc (NumCol x)     = NumCol $ inc x
-inc (StrCol x)     = StrCol $ inc x
-inc (Flo x y)      = Flo x $ inc y
-inc (Arith x y z)  = Arith x (inc y) (inc z)
-inc (Minus x y)    = Minus (inc x) (inc y)
-inc (Div x y)      = Div (inc x) (inc y)
-inc (Bool1 x y)    = Bool1 x (inc y)
-inc (Bool2 op x y) = Bool2 op (inc x) (inc y)
-inc (Int1 x y)     = Int1 x (inc y)
-inc (Int2 op x y)  = Int2 op (inc x) (inc y)
-inc (Cmp  op x y)  = Cmp op (inc x) (inc y)
-inc (Ite  x y z)   = Ite (inc x) (inc y) (inc z)
-inc (Concat x y)   = Concat (inc x) (inc y)
+inc : Expr s u -> Expr (h :: s) u
+inc X            = X
+inc (Lit u lit)  = Lit u lit
+inc (NCol x)     = NCol $ inc x
+inc (SCol x)     = SCol $ inc x
+inc (EFun x y)   = EFun x $ inc y
+inc (EOp x y z)  = EOp x (inc y) (inc z)
+inc (Ite x y z)  = Ite (inc x) (inc y) (inc z)
 
 --------------------------------------------------------------------------------
 --          Syntax
@@ -201,114 +186,114 @@ infixl 6 `xor`
 infixl 5 .|.
 
 export %inline
-mod : (0 _ : Integral t) => Expr s t -> Expr s t -> Expr s t
-mod = Int2 Mod
+mod : (0 _ : Integral u) => Expr s u -> Expr s u -> Expr s u
+mod x y = EOp Mod x y
 
 export %inline
-shiftL : (0 _ : Integral t) => Expr s t -> Expr s t -> Expr s t
-shiftL = Int2 Shl
+shiftL : (0 _ : Integral u) => Expr s u -> Expr s u -> Expr s u
+shiftL x y = EOp Shl x y
 
 export %inline
-shiftR : (0 _ : Integral t) => Expr s t -> Expr s t -> Expr s t
-shiftR = Int2 Shr
+shiftR : (0 _ : Integral u) => Expr s u -> Expr s u -> Expr s u
+shiftR x y = EOp Shr x y
 
 export %inline
-(.&.) : (0 _ : Integral t) => Expr s t -> Expr s t -> Expr s t
-(.&.) = Int2 And
+(.&.) : (0 _ : Integral u) => Expr s u -> Expr s u -> Expr s u
+(.&.) x y = EOp And x y
 
 export %inline
-(.|.) : (0 _ : Integral t) => Expr s t -> Expr s t -> Expr s t
-(.|.) = Int2 Or
+(.|.) : (0 _ : Integral u) => Expr s u -> Expr s u -> Expr s u
+(.|.) x y = EOp Or x y
 
 export %inline
-xor : (0 _ : Integral t) => Expr s t -> Expr s t -> Expr s t
-xor = Int2 Xor
+xor : (0 _ : Integral u) => Expr s u -> Expr s u -> Expr s u
+xor x y = EOp Xor x y
 
 export %inline
-complement : (0 _ : Integral t) => Expr s t -> Expr s t
-complement = Int1 Compl
+complement : (0 _ : Integral u) => Expr s u -> Expr s u
+complement x = EFun Compl x
 
 export %inline
-factorial : (0 _ : Integral t) => Expr s t -> Expr s t
-factorial = Int1 Fact
+factorial : Expr s GNat -> Expr s GNat
+factorial v = EFun Fact v
 
 export %inline
-ifelse : Expr s Bool -> Expr s t -> Expr s t -> Expr s t
+ifelse : Expr s GBool -> Expr s u -> Expr s u -> Expr s u
 ifelse = Ite
 
 export %inline
-(==) : (0 _ : Num t) => Atom t => Expr s t -> Expr s t -> Expr s Bool
-(==) = Cmp Eq
+(==) : (0 _ : Num u) => Expr s u -> Expr s u -> Expr s GBool
+(==) x y = EOp Eq x y
 
 export %inline
-(/=) : (0 _ : Num t) => Atom t => Expr s t -> Expr s t -> Expr s Bool
-(/=) = Cmp Neq
+(/=) : (0 _ : Num u) => Expr s u -> Expr s u -> Expr s GBool
+(/=) x y = EOp Neq x y
 
 export %inline
-(>=) : (0 _ : Num t) => Atom t => Expr s t -> Expr s t -> Expr s Bool
-(>=) = Cmp GTE
+(>=) : (0 _ : Num u) => Expr s u -> Expr s u -> Expr s GBool
+(>=) x y = EOp GTE x y
 
 export %inline
-(<=) : (0 _ : Num t) => Atom t => Expr s t -> Expr s t -> Expr s Bool
-(<=) = Cmp LTE
+(<=) : (0 _ : Num u) => Expr s u -> Expr s u -> Expr s GBool
+(<=) x y = EOp LTE x y
 
 export %inline
-(>) : (0 _ : Num t) => Atom t => Expr s t -> Expr s t -> Expr s Bool
-(>) = Cmp GT
+(>) : (0 _ : Num u) => Expr s u -> Expr s u -> Expr s GBool
+(>) x y = EOp GT x y
 
 export %inline
-(<) : (0 _ : Num t) => Atom t => Expr s t -> Expr s t -> Expr s Bool
-(<) = Cmp LT
+(<) : (0 _ : Num u) => Expr s u -> Expr s u -> Expr s GBool
+(<) x y = EOp LT x y
 
 export %inline
-(&&) : Expr s Bool -> Expr s Bool -> Expr s Bool
-(&&) = Bool2 LAnd
+(&&) : Expr s GBool -> Expr s GBool -> Expr s GBool
+(&&) x y = EOp LAnd x y
 
 export %inline
-(||) : Expr s Bool -> Expr s Bool -> Expr s Bool
-(||) = Bool2 LOr
+(||) : Expr s GBool -> Expr s GBool -> Expr s GBool
+(||) x y = EOp LOr x y
 
 export %inline
-not : Expr s Bool -> Expr s Bool
-not = Bool1 Not
+not : Expr s GBool -> Expr s GBool
+not x = EFun Not x
 
 export %inline
-sin : Expr s Double -> Expr s Double
-sin = Flo Sin
+sin : (0 _ : Num u) => Expr s u -> Expr s GDbl
+sin x = EFun Sin x
 
 export %inline
-cos : Expr s Double -> Expr s Double
-cos = Flo Cos
+cos : (0 _ : Num u) => Expr s u -> Expr s GDbl
+cos x = EFun Cos x
 
 export %inline
-tan : Expr s Double -> Expr s Double
-tan = Flo Tan
+tan : (0 _ : Num u) => Expr s u -> Expr s GDbl
+tan x = EFun Tan x
 
 export %inline
-exp : Expr s Double -> Expr s Double
-exp = Flo Exp
+exp : (0 _ : Num u) => Expr s u -> Expr s GDbl
+exp x = EFun Exp x
 
 export %inline
-log : Expr s Double -> Expr s Double
-log = Flo Log
+log : (0 _ : Num u) => Expr s u -> Expr s GDbl
+log x = EFun Log x
 
 export %inline
-col : (0 num : Num t) => Sel s t -> Expr s t
-col = NumCol
+col : (0 num : Num u) => Sel s u -> Expr s u
+col = NCol
 
 export %inline
-strcol : Sel s String -> Expr s String
-strcol = StrCol
+strcol : Sel s GString -> Expr s GString
+strcol = SCol
 
 --------------------------------------------------------------------------------
 --          Example
 --------------------------------------------------------------------------------
 
 Prices : Schema
-Prices = ["Year" :> Bits16, "PQR" :> Bits32, "XYZ" :> Bits32]
+Prices = ["Year" :> GNat, "PQR" :> GNat, "XYZ" :> GNat]
 
-columnsByName : Selection Prices [Bits16, Bits32]
+columnsByName : Entries Prices [GNat, GNat]
 columnsByName = [col "Year", col "XYZ"]
 
-columnsByIndex : Selection Prices [Bits16, Bits32]
+columnsByIndex : Entries Prices [GNat, GNat]
 columnsByIndex = [col 1, col 3]
