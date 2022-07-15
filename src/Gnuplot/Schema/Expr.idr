@@ -89,13 +89,14 @@ Interpolation (BinOp c r) where
 
 public export
 data Expr : (s : Schema) -> (u : Universe) -> Type where
-  X    : Expr s u
-  Lit  : (u : Universe) -> (lit : IdrisType u) -> Expr s u
-  NCol : (0 _ : Num u) => Sel s u -> Expr s u
-  SCol : Sel s GString -> Expr s GString
-  EFun : Fun c f -> Expr s u -> (0 _ : c u) => Expr s (f u)
-  EOp  : BinOp c f -> Expr s u -> Expr s u -> (0 _ : c u) => Expr s (f u)
-  Ite  : Expr s GBool -> Expr s u -> Expr s u -> Expr s u
+  X     : Expr s u
+  ColNr : Expr s GNat
+  Lit   : (u : Universe) -> (lit : IdrisType u) -> Expr s u
+  NCol  : (0 _ : Num u) => Sel s u -> Expr s u
+  SCol  : Sel s GString -> Expr s GString
+  EFun  : Fun c f -> Expr s u -> (0 _ : c u) => Expr s (f u)
+  EOp   : BinOp c f -> Expr s u -> Expr s u -> (0 _ : c u) => Expr s (f u)
+  Ite   : Expr s GBool -> Expr s u -> Expr s u -> Expr s u
 
 export
 {u : _} -> Num u => Num (Expr s u) where
@@ -133,6 +134,7 @@ x ^ y = EOp Pow x y
 export
 hasVar : Expr s u -> Bool
 hasVar X           = False
+hasVar ColNr       = False
 hasVar (Lit _ _)   = False
 hasVar (NCol _)    = True
 hasVar (SCol _)    = True
@@ -142,6 +144,7 @@ hasVar (Ite x y z) = hasVar x || hasVar y || hasVar z
 
 ip : Expr s u -> String
 ip X              = "x"
+ip ColNr          = "column(0)"
 ip (Lit u lit)    = print u lit
 ip (NCol x)       = "column(\{x})"
 ip (SCol x)       = "strcol(\{x})"
@@ -154,21 +157,10 @@ export %inline
 Interpolation (Expr s u) where
   interpolate       = ip
 
-||| Entries in a `using` clause (see `help plot using`).
-public export
-data Entries : (s : Schema) -> List Universe -> Type where
-  Nil  : Entries s []
-  (::) : Expr s u -> Entries s us -> Entries s (u :: us)
-
-export
-Interpolation (Entries s us) where
-  interpolate []        = ""
-  interpolate [x]       = interpolate x
-  interpolate (h :: t)  = "(\{h}):(\{t})"
-
 export
 inc : Expr s u -> Expr (h :: s) u
 inc X            = X
+inc ColNr        = ColNr
 inc (Lit u lit)  = Lit u lit
 inc (NCol x)     = NCol $ inc x
 inc (SCol x)     = SCol $ inc x
@@ -282,18 +274,9 @@ col : (0 num : Num u) => Sel s u -> Expr s u
 col = NCol
 
 export %inline
+colNr : Expr s GNat
+colNr = ColNr
+
+export %inline
 strcol : Sel s GString -> Expr s GString
 strcol = SCol
-
---------------------------------------------------------------------------------
---          Example
---------------------------------------------------------------------------------
-
-Prices : Schema
-Prices = ["Year" :> GNat, "PQR" :> GNat, "XYZ" :> GNat]
-
-columnsByName : Entries Prices [GNat, GNat]
-columnsByName = [col "Year", col "XYZ"]
-
-columnsByIndex : Entries Prices [GNat, GNat]
-columnsByIndex = [col 1, col 3]

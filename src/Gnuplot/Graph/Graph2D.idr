@@ -9,130 +9,127 @@ import Gnuplot.Util
 
 %default total
 
---------------------------------------------------------------------------------
---          Graph Type
---------------------------------------------------------------------------------
+public export
+data Mod : Type where
+  TicLabels : Axis -> Mod
 
 public export
-data GraphType : (x,y : Type) -> List Type -> Type where
-  FunLines       : GraphType x y [y]
-  FunPoints      : GraphType x y [y]
-  FunLinesPoints : GraphType x y [y]
-  FunImpulses    : GraphType x y [y]
-  FunDots        : GraphType x y [y]
-  Histograms     : GraphType x y [y]
-  
---  XErrorBarsRelative   : GraphType x y [x,y,x]
---  YErrorBarsRelative   : GraphType x y [x,y,y]
---  XyErrorBarsRelative  : GraphType x y [x,y,x,y]
---  XErrorBarsAbsolute   : GraphType x y [x,y,x,x]
---  YErrorBarsAbsolute   : GraphType x y [x,y,y,y]
---  XyErrorBarsAbsolute  : GraphType x y [x,y,x,x,y,y]
- 
---  XErrorLinesRelative  : GraphType x y [x,y,x]
---  YErrorLinesRelative  : GraphType x y [x,y,y]
---  XyErrorLinesRelative : GraphType x y [x,y,x,y]
---  XErrorLinesAbsolute  : GraphType x y [x,y,x,x]
---  YErrorLinesAbsolute  : GraphType x y [x,y,y,y]
---  XyErrorLinesAbsolute : GraphType x y [x,y,x,x,y,y]
-  
-  Lines          : GraphType x y [x,y]
-  Points         : GraphType x y [x,y]
-  LinesPoints    : GraphType x y [x,y]
-  Impulses       : GraphType x y [x,y]
-  Dots           : GraphType x y [x,y]
-  Steps          : GraphType x y [x,y]
-  FSteps         : GraphType x y [x,y]
-  HiSteps        : GraphType x y [x,y]
-  ErrorBars      : GraphType x y [x,y]
-  ErrorLines     : GraphType x y [x,y]
-  Boxes          : GraphType x y [x,y]
-  FilledCurves   : GraphType x y [x,y]
+0 Mods : Type
+Mods = List Mod
 
---  FinanceBars    : GraphType x y [x,y,y,y,y]
---  CandleSticks   : GraphType x y [x,y,y,y,y]
---  Vectors        : GraphType x y [x,y,x,y]
---  Image          : (0 z : Type) -> GraphType x y [x,y,z]
-  
---  FilledStripe      : GraphType x y [x,y,y]
---  FilledStripeAbove : GraphType x y [x,y,y]
---  FilledStripeBelow : GraphType x y [x,y,y]
+public export
+AddCol : (x,y : Universe) -> Mod -> List Universe
+AddCol x y (TicLabels _) = [GString]
+
+public export
+AddCols : (x,y : Universe) -> Mods -> List Universe
+AddCols x y []        = []
+AddCols x y (m :: ms) = AddCol x y m ++ AddCols x y ms
+
+public export
+data Axes2D = X | Y | XY
+
+export
+Interpolation Axes2D where
+  interpolate X  = "x"
+  interpolate Y  = "y"
+  interpolate XY = "xy"
+
+public export
+data ErrorType = Relative | Absolute
+
+public export
+ErrorBarColumns : (x,y : Universe)
+                -> Axes2D
+                -> ErrorType
+                -> List Universe
+ErrorBarColumns x y X  Relative = [x,y,x]
+ErrorBarColumns x y X  Absolute = [x,y,x,x]
+ErrorBarColumns x y Y  Relative = [x,y,y]
+ErrorBarColumns x y Y  Absolute = [x,y,y,y]
+ErrorBarColumns x y XY Relative = [x,y,x,y]
+ErrorBarColumns x y XY Absolute = [x,y,x,x,y,y]
+
+public export
+data GraphType : (x,y : Universe) -> List Universe -> Type where
+  ||| A line connecting the points in a 2D graph
+  Lines             : GraphType x y [x,y]
+
+  ||| Each x,y data point is displayed using a small icon
+  Points            : GraphType x y [x,y]
+
+  ||| Combination of `Lines` and `Points`
+  LinesPoints       : GraphType x y [x,y]
+
+  ||| Vertical line fron [x,0] to [x,y]
+  Impulses          : GraphType x y [x,y]
+
+  ||| Prints a tiny dot at each point. Useful for scatterplots with
+  ||| many data points.
+  Dots              : GraphType x y [x,y]
+
+  ||| Prints a vertical or horizontal error bar (or both).
+  ||| If the `ErrorType` is `Relative`, only one additional
+  ||| column per axis with the error delta is required.
+  ||| If the `ErrorType` is `Absolute`, two additional columns
+  ||| are required (as returned by `ErrorBarColumns`)
+  ErrorBars         :  (xs : Axes2D)
+                    -> (bs : ErrorType)
+                    -> GraphType x y (ErrorBarColumns x y xs bs)
+
+  ||| Combines `ErrorBars` and `Lines`
+  ErrorLines        :  (xs : Axes2D)
+                    -> (bs : ErrorType)
+                    -> GraphType x y (ErrorBarColumns x y xs bs)
 
 export
 Interpolation (GraphType x y ts) where
-  interpolate FunLines            = "lines"
-  interpolate FunPoints           = "points"
-  interpolate FunLinesPoints      = "linespoints"
-  interpolate FunImpulses         = "impulses"
-  interpolate FunDots             = "dots"
-  interpolate Histograms          = "histograms"
+  interpolate Lines              = "lines"
+  interpolate Points             = "points"
+  interpolate LinesPoints        = "linespoints"
+  interpolate Impulses           = "impulses"
+  interpolate Dots               = "dots"
+  interpolate (ErrorBars xs _)   = "\{xs}errorbars"
+  interpolate (ErrorLines xs _)  = "\{xs}errorlines"
 
---  interpolate XErrorBarsRelative   = "xerrorbars"
---  interpolate YErrorBarsRelative   = "yerrorbars"
---  interpolate XyErrorBarsRelative  = "xyerrorbars"
---  interpolate XErrorBarsAbsolute   = "xerrorbars"
---  interpolate YErrorBarsAbsolute   = "yerrorbars"
---  interpolate XyErrorBarsAbsolute  = "xyerrorbars"
---
---  interpolate XErrorLinesRelative  = "xerrorlines"
---  interpolate YErrorLinesRelative  = "yerrorlines"
---  interpolate XyErrorLinesRelative = "xyerrorlines"
---  interpolate XErrorLinesAbsolute  = "xerrorlines"
---  interpolate YErrorLinesAbsolute  = "yerrorlines"
---  interpolate XyErrorLinesAbsolute = "xyerrorlines"
+--------------------------------------------------------------------------------
+--          Graph
+--------------------------------------------------------------------------------
 
-  interpolate Lines                = "lines"
-  interpolate Points               = "points"
-  interpolate LinesPoints          = "linespoints"
-  interpolate Impulses             = "impulses"
-  interpolate Dots                 = "dots"
-  interpolate Steps                = "steps"
-  interpolate FSteps               = "fsteps"
-  interpolate HiSteps              = "histeps"
-  interpolate ErrorBars            = "errorbars"
-  interpolate ErrorLines           = "errorlines"
-  interpolate Boxes                = "boxes"
-  interpolate FilledCurves         = "filledcurves"
---  interpolate FinanceBars          = "financebars"
---  interpolate CandleSticks         = "candlesticks"
---  interpolate Vectors              = "vectors"
---  interpolate (Image z)            = "image"
---  interpolate FilledStripe         = "filledcurves"
---  interpolate FilledStripeAbove    = "filledcurves above"
---  interpolate FilledStripeBelow    = "filledcurves below"
+public export
+record Graph (x,y : Universe) (s : Schema) where
+  constructor G
+  {types : List Universe}
+  type : GraphType x y types
+  mods : Mods
+  cols : NP (Expr s) (types ++ AddCols x y mods) 
+  line : LineSettings
 
--- gtAtoms : Atom x => Atom y => GraphType x y ts -> NP Atom ts
--- gtAtoms Histograms     = %search
--- gtAtoms Lines          = %search
--- gtAtoms Points         = %search
--- gtAtoms LinesPoints    = %search
--- gtAtoms Impulses       = %search
--- gtAtoms Dots           = %search
--- gtAtoms Steps          = %search
--- gtAtoms FSteps         = %search
--- gtAtoms HiSteps        = %search
--- gtAtoms ErrorBars      = %search
--- gtAtoms ErrorLines     = %search
--- gtAtoms Boxes          = %search
--- gtAtoms FilledCurves   = %search
--- gtAtoms FunLines       = %search
--- gtAtoms FunPoints      = %search
--- gtAtoms FunLinesPoints = %search
--- gtAtoms FunImpulses    = %search
--- gtAtoms FunDots        = %search
--- 
--- --------------------------------------------------------------------------------
--- --          Graph
--- --------------------------------------------------------------------------------
--- 
--- public export
--- record Graph (x,y : Type) (s : Schema) where
---   constructor G
---   {0 types : List Type}
---   type : GraphType x y types
---   cols : Selection s types
---   line : LineSettings
--- 
+splitNP : (ts : List t) -> NP f (ts ++ ss) -> (NP f ts, NP f ss)
+splitNP []        vs        = ([],vs)
+splitNP (t :: ts) (v :: vs) =
+  let (xs,ys) = splitNP ts vs in (v :: xs, ys)
+
+modCols : (mods : Mods) -> NP (Expr s) (AddCols x y mods) -> List String
+modCols []                 []        = []
+modCols (TicLabels x :: xs) (e :: es) = case e of
+  SCol n    => "\{x}ticlabels(\{n})" :: modCols xs es
+  e         => "\{x}ticlabels(\{e})" :: modCols xs es
+
+tpeCols : NP (Expr s) us -> List String
+tpeCols []             = []
+tpeCols (ColNr  :: vs) = "0"    :: tpeCols vs
+tpeCols (NCol x :: vs) = "\{x}" :: tpeCols vs
+tpeCols (e      :: vs) = "\{e}" :: tpeCols vs
+
+export
+Interpolation (Graph x y s) where
+  interpolate (G {types} tpe mods cols line) =
+    let (cs,mcs) := splitNP types cols
+        strs     := tpeCols cs ++ modCols mods mcs
+     in ?foo
+
+
 -- export
 -- Atom x => Atom y => Interpolation (Graph x y s) where
 --   interpolate (G t cols ls) = 
