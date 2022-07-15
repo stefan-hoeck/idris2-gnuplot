@@ -134,7 +134,7 @@ x ^ y = EOp Pow x y
 export
 hasVar : Expr s u -> Bool
 hasVar X           = False
-hasVar ColNr       = False
+hasVar ColNr       = True
 hasVar (Lit _ _)   = False
 hasVar (NCol _)    = True
 hasVar (SCol _)    = True
@@ -269,14 +269,14 @@ export %inline
 log : (0 _ : Num u) => Expr s u -> Expr s GDbl
 log x = EFun Log x
 
-export %inline
+public export %inline
 col : (0 num : Num u) => Sel s u -> Expr s u
 col = NCol
 
-export %inline
+public export %inline
 colNr : Expr s GNat
 colNr = ColNr
 
-export %inline
+public export %inline
 strcol : Sel s GString -> Expr s GString
 strcol = SCol

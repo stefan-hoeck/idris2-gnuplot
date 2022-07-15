@@ -1,13 +1,29 @@
-module Gnuplot.Graph.Graph2D
+module Gnuplot.Graph2D
 
 import Gnuplot.Schema.Expr
 import Gnuplot.File
-import Gnuplot.Graph.Interface
 import Gnuplot.Options
 import Gnuplot.Schema
 import Gnuplot.Util
 
 %default total
+
+--------------------------------------------------------------------------------
+--          Interface
+--------------------------------------------------------------------------------
+
+public export
+interface IsGraph (0 g : Schema -> Type) where
+  command_ : String
+  plot     : Maybe FilePath -> g s -> String
+
+export
+command : (0 g : Schema -> Type) -> IsGraph g => String
+command g = command_ {g}
+
+--------------------------------------------------------------------------------
+--          Graph Modifiers
+--------------------------------------------------------------------------------
 
 public export
 data Mod : Type where
@@ -34,6 +50,10 @@ Interpolation Axes2D where
   interpolate X  = "x"
   interpolate Y  = "y"
   interpolate XY = "xy"
+
+--------------------------------------------------------------------------------
+--          Graph Types
+--------------------------------------------------------------------------------
 
 public export
 data ErrorType = Relative | Absolute
@@ -124,27 +144,78 @@ tpeCols (e      :: vs) = "\{e}" :: tpeCols vs
 
 export
 Interpolation (Graph x y s) where
-  interpolate (G {types} tpe mods cols line) =
+  interpolate (G {types} tpe mods cols ls) =
     let (cs,mcs) := splitNP types cols
         strs     := tpeCols cs ++ modCols mods mcs
-     in ?foo
+        columns  := fastConcat $ intersperse ":" strs
+     in "\{columns} with \{tpe} \{ls}"
 
+export
+IsGraph (Graph x y) where
+  command_ = "plot"
 
--- export
--- Atom x => Atom y => Interpolation (Graph x y s) where
---   interpolate (G t cols ls) = 
---     let as = gtAtoms t
---      in "\{cols} with \{t} \{ls}"
--- 
--- export
--- Atom x => Atom y => IsGraph (Graph x y) where
---   command_      = "plot"
---   toString (Just fp) g@(G t [x] ls) = case hasVar x of
---     True  => "\"\{fp}\" using \{g}"
---     False => "\{g}"
---   toString (Just fp) g              = "\"\{fp}\" using \{g}"
---   toString Nothing g                = "\{g}"
--- 
--- export
--- deflt : GraphType x y ts -> Selection s ts -> Graph x y s
--- deflt t c = G t c []
+  plot Nothing  g = "\{g}"
+  plot (Just z) g = case hany hasVar g.cols of
+    True  => let fp = quote "\{z}" in "\{fp} using \{g}"
+    False => "\{g}"
+
+--------------------------------------------------------------------------------
+--          Titled Graphs
+--------------------------------------------------------------------------------
+
+public export
+getX : GraphType x y us -> NP (Expr s) (us ++ r) -> Expr s x
+getX Lines                    (h :: _) = h
+getX Points                   (h :: _) = h
+getX LinesPoints              (h :: _) = h
+getX Impulses                 (h :: _) = h
+getX Dots                     (h :: _) = h
+getX (ErrorBars X Relative)   (h :: _) = h
+getX (ErrorBars X Absolute)   (h :: _) = h
+getX (ErrorBars Y Relative)   (h :: _) = h
+getX (ErrorBars Y Absolute)   (h :: _) = h
+getX (ErrorBars XY Relative)  (h :: _) = h
+getX (ErrorBars XY Absolute)  (h :: _) = h
+getX (ErrorLines X Relative)  (h :: _) = h
+getX (ErrorLines X Absolute)  (h :: _) = h
+getX (ErrorLines Y Relative)  (h :: _) = h
+getX (ErrorLines Y Absolute)  (h :: _) = h
+getX (ErrorLines XY Relative) (h :: _) = h
+getX (ErrorLines XY Absolute) (h :: _) = h
+
+public export
+getY : GraphType x y us -> NP (Expr s) (us ++ r) -> Expr s y
+getY Lines                    (_ :: h :: _) = h
+getY Points                   (_ :: h :: _) = h
+getY LinesPoints              (_ :: h :: _) = h
+getY Impulses                 (_ :: h :: _) = h
+getY Dots                     (_ :: h :: _) = h
+getY (ErrorBars X Relative)   (_ :: h :: _) = h
+getY (ErrorBars X Absolute)   (_ :: h :: _) = h
+getY (ErrorBars Y Relative)   (_ :: h :: _) = h
+getY (ErrorBars Y Absolute)   (_ :: h :: _) = h
+getY (ErrorBars XY Relative)  (_ :: h :: _) = h
+getY (ErrorBars XY Absolute)  (_ :: h :: _) = h
+getY (ErrorLines X Relative)  (_ :: h :: _) = h
+getY (ErrorLines X Absolute)  (_ :: h :: _) = h
+getY (ErrorLines Y Relative)  (_ :: h :: _) = h
+getY (ErrorLines Y Absolute)  (_ :: h :: _) = h
+getY (ErrorLines XY Relative) (_ :: h :: _) = h
+getY (ErrorLines XY Absolute) (_ :: h :: _) = h
+
+public export
+getTitle : {s : _} -> GraphType x y us -> NP (Expr s) (us ++ r) -> Maybe String
+getTitle g cols = case getY g cols of
+  NCol z => Just $ columnName z.prf
+  _      => Nothing
+
+public export
+titled :  {s  : _}
+       -> {us : _}
+       -> (gt : GraphType x y us)
+       -> (cols : NP (Expr s) (us ++ []))
+       -> (0 prf : IsJust (getTitle {r = []} gt cols))
+       => Graph x y s
+titled gt cols =
+  let ttl = fromJust $ getTitle {r = []} gt cols
+   in G gt [] cols [ title $ fromString ttl ]

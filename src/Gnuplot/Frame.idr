@@ -1,11 +1,9 @@
 module Gnuplot.Frame
 
 import Gnuplot.Display
+import Gnuplot.Graph2D
 import Gnuplot.Options
-import Gnuplot.Graph.Interface
-import Gnuplot.Plot.Plot2D
-import Gnuplot.Plot.Types
-import Gnuplot.Graph.Graph2D
+import Gnuplot.Plot2D
 import Gnuplot.Schema
 import Gnuplot.Util
 
@@ -22,7 +20,7 @@ IsGraph g => ToScript (Frame g) where
   toScript (MkFrame ss p) = set ss <+> script p
 
 public export
-0 Frame2D : (x,y : Type) -> Type
+0 Frame2D : (x,y : Universe) -> Type
 Frame2D x y = Frame (Graph x y)
 
 export
