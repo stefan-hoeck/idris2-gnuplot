@@ -13,12 +13,12 @@ import Gnuplot.Util
 --------------------------------------------------------------------------------
 
 public export
-interface IsGraph (0 g : Schema -> Type) where
+interface IsGraph (0 g : FunctionType -> Schema -> Type) where
   command_ : String
-  plot     : Maybe FilePath -> g s -> String
+  plot     : Maybe FilePath -> g t s -> String
 
-export
-command : (0 g : Schema -> Type) -> IsGraph g => String
+export %inline
+command : (0 g : FunctionType -> Schema -> Type) -> IsGraph g => String
 command g = command_ {g}
 
 --------------------------------------------------------------------------------
@@ -88,6 +88,10 @@ data GraphType : (x,y : Universe) -> List Universe -> Type where
   ||| many data points.
   Dots              : GraphType x y [x,y]
 
+  ||| Draws a rectangle centered about the given x coordinate
+  ||| that extends from the x axis to the given y coordinate.
+  Boxes             : GraphType x y [x,y]
+
   ||| Prints a vertical or horizontal error bar (or both).
   ||| If the `ErrorType` is `Relative`, only one additional
   ||| column per axis with the error delta is required.
@@ -102,6 +106,13 @@ data GraphType : (x,y : Universe) -> List Universe -> Type where
                     -> (bs : ErrorType)
                     -> GraphType x y (ErrorBarColumns x y xs bs)
 
+  ||| Places a string label at the given position
+  Labels            : GraphType x y [x,y,GString]
+
+  ||| Connects consecutive points in a plot with line
+  ||| segments.
+  Steps             : GraphType x y [x,y]
+
 export
 Interpolation (GraphType x y ts) where
   interpolate Lines              = "lines"
@@ -109,67 +120,88 @@ Interpolation (GraphType x y ts) where
   interpolate LinesPoints        = "linespoints"
   interpolate Impulses           = "impulses"
   interpolate Dots               = "dots"
+  interpolate Boxes              = "boxes"
   interpolate (ErrorBars xs _)   = "\{xs}errorbars"
   interpolate (ErrorLines xs _)  = "\{xs}errorlines"
+  interpolate Labels             = "labels"
+  interpolate Steps              = "steps"
 
 --------------------------------------------------------------------------------
 --          Graph
 --------------------------------------------------------------------------------
 
 public export
-record Graph (x,y : Universe) (s : Schema) where
-  constructor G
-  {types : List Universe}
-  type : GraphType x y types
-  mods : Mods
-  cols : NP (Expr s) (types ++ AddCols x y mods) 
-  line : LineSettings
+data Graph :  (x,y : Universe)
+           -> (t   : FunctionType)
+           -> (s   : Schema)
+           -> Type where
+  G   :  {types : List Universe}
+      -> (type  : GraphType x y types)
+      -> (mods  : Mods)
+      -> (cols  : NP (Expr t s) (types ++ AddCols x y mods))
+      -> (0 prf : NonEmpty s)
+      => (line  : LineSettings)
+      -> Graph x y t s
+
+  Fun :  (type : GraphType x y [x,y])
+      -> (fun  : Expr Regular [] y)
+      -> (line : LineSettings)
+      -> Graph x y Regular s
+
+  Param :  (type : GraphType x y [x,y])
+        -> (funX : Expr Parametric [] x)
+        -> (funY : Expr Parametric [] y)
+        -> (line : LineSettings)
+        -> Graph x y Parametric s
 
 splitNP : (ts : List t) -> NP f (ts ++ ss) -> (NP f ts, NP f ss)
 splitNP []        vs        = ([],vs)
 splitNP (t :: ts) (v :: vs) =
   let (xs,ys) = splitNP ts vs in (v :: xs, ys)
 
-modCols : (mods : Mods) -> NP (Expr s) (AddCols x y mods) -> List String
+modCols : (mods : Mods) -> NP (Expr t s) (AddCols x y mods) -> List String
 modCols []                 []        = []
 modCols (TicLabels x :: xs) (e :: es) = case e of
   SCol n    => "\{x}ticlabels(\{n})" :: modCols xs es
   e         => "\{x}ticlabels(\{e})" :: modCols xs es
 
-tpeCols : NP (Expr s) us -> List String
+tpeCols : NP (Expr t s) us -> List String
 tpeCols []             = []
-tpeCols (ColNr  :: vs) = "0"    :: tpeCols vs
-tpeCols (NCol x :: vs) = "\{x}" :: tpeCols vs
-tpeCols (e      :: vs) = "\{e}" :: tpeCols vs
+tpeCols (ColNr  :: vs) = "0"      :: tpeCols vs
+tpeCols (X      :: vs) = "x"      :: tpeCols vs
+tpeCols (NCol x :: vs) = "\{x}"   :: tpeCols vs
+tpeCols (e      :: vs) = "(\{e})" :: tpeCols vs
 
 export
-Interpolation (Graph x y s) where
+Interpolation (Graph x y t s) where
   interpolate (G {types} tpe mods cols ls) =
     let (cs,mcs) := splitNP types cols
         strs     := tpeCols cs ++ modCols mods mcs
         columns  := fastConcat $ intersperse ":" strs
      in "\{columns} with \{tpe} \{ls}"
 
+  interpolate (Fun   tpe fun ls) = "\{fun} with \{tpe} \{ls}"
+  interpolate (Param tpe fx fy ls) = "\{fx},\{fy} with \{tpe} \{ls}"
+
 export
 IsGraph (Graph x y) where
-  command_ = "plot"
+  command_  = "plot"
 
   plot Nothing  g = "\{g}"
-  plot (Just z) g = case hany hasVar g.cols of
-    True  => let fp = quote "\{z}" in "\{fp} using \{g}"
-    False => "\{g}"
+  plot (Just z) g = let fp = quote "\{z}" in "\{fp} using \{g}"
 
 --------------------------------------------------------------------------------
 --          Titled Graphs
 --------------------------------------------------------------------------------
 
 public export
-getX : GraphType x y us -> NP (Expr s) (us ++ r) -> Expr s x
+getX : GraphType x y us -> NP (Expr t s) (us ++ r) -> Expr t s x
 getX Lines                    (h :: _) = h
 getX Points                   (h :: _) = h
 getX LinesPoints              (h :: _) = h
 getX Impulses                 (h :: _) = h
 getX Dots                     (h :: _) = h
+getX Boxes                    (h :: _) = h
 getX (ErrorBars X Relative)   (h :: _) = h
 getX (ErrorBars X Absolute)   (h :: _) = h
 getX (ErrorBars Y Relative)   (h :: _) = h
@@ -182,14 +214,17 @@ getX (ErrorLines Y Relative)  (h :: _) = h
 getX (ErrorLines Y Absolute)  (h :: _) = h
 getX (ErrorLines XY Relative) (h :: _) = h
 getX (ErrorLines XY Absolute) (h :: _) = h
+getX Labels                   (h :: _) = h
+getX Steps                    (h :: _) = h
 
 public export
-getY : GraphType x y us -> NP (Expr s) (us ++ r) -> Expr s y
+getY : GraphType x y us -> NP (Expr t s) (us ++ r) -> Expr t s y
 getY Lines                    (_ :: h :: _) = h
 getY Points                   (_ :: h :: _) = h
 getY LinesPoints              (_ :: h :: _) = h
 getY Impulses                 (_ :: h :: _) = h
 getY Dots                     (_ :: h :: _) = h
+getY Boxes                    (_ :: h :: _) = h
 getY (ErrorBars X Relative)   (_ :: h :: _) = h
 getY (ErrorBars X Absolute)   (_ :: h :: _) = h
 getY (ErrorBars Y Relative)   (_ :: h :: _) = h
@@ -202,9 +237,14 @@ getY (ErrorLines Y Relative)  (_ :: h :: _) = h
 getY (ErrorLines Y Absolute)  (_ :: h :: _) = h
 getY (ErrorLines XY Relative) (_ :: h :: _) = h
 getY (ErrorLines XY Absolute) (_ :: h :: _) = h
+getY Labels                   (_ :: h :: _) = h
+getY Steps                    (_ :: h :: _) = h
 
 public export
-getTitle : {s : _} -> GraphType x y us -> NP (Expr s) (us ++ r) -> Maybe String
+getTitle :  {s : _}
+         -> GraphType x y us
+         -> NP (Expr t s) (us ++ r)
+         -> Maybe String
 getTitle g cols = case getY g cols of
   NCol z => Just $ columnName z.prf
   _      => Nothing
@@ -213,9 +253,10 @@ public export
 titled :  {s  : _}
        -> {us : _}
        -> (gt : GraphType x y us)
-       -> (cols : NP (Expr s) (us ++ []))
+       -> (cols : NP (Expr t s) (us ++ []))
        -> (0 prf : IsJust (getTitle {r = []} gt cols))
-       => Graph x y s
+       => (0 p2  : NonEmpty s)
+       => Graph x y t s
 titled gt cols =
   let ttl = fromJust $ getTitle {r = []} gt cols
    in G gt [] cols [ title $ fromString ttl ]

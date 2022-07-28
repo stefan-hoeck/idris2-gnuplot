@@ -51,11 +51,11 @@ sinCosTan = frame
   , ylabel "y"
   ] $
   fromTable trigs
-  [ titled {y = GDbl} Lines [col 1,col 2]
-  , titled {y = GDbl} Lines [col 1,col 3]
-  , titled {y = GDbl} Lines [col 1,col 4]
-  , titled {y = GDbl} Lines [col 1,col 5]
-  , titled {y = GDbl} Lines [col 1,col 6]
+  [ titled Lines [col 1,col 2]
+  , titled Lines [col 1,col 3]
+  , titled Lines [col 1,col 4]
+  , titled Lines [col 1,col 5]
+  , titled Lines [col 1,col 6]
   ]
 
 --------------------------------------------------------------------------------
