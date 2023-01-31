@@ -88,18 +88,24 @@ Interpolation (BinOp c r) where
   interpolate Dot   = "."
 
 public export
-data Expr : (s : Schema) -> (u : Universe) -> Type where
-  X     : Expr s u
-  ColNr : Expr s GNat
-  Lit   : (u : Universe) -> (lit : IdrisType u) -> Expr s u
-  NCol  : (0 _ : Num u) => Sel s u -> Expr s u
-  SCol  : Sel s GString -> Expr s GString
-  EFun  : Fun c f -> Expr s u -> (0 _ : c u) => Expr s (f u)
-  EOp   : BinOp c f -> Expr s u -> Expr s u -> (0 _ : c u) => Expr s (f u)
-  Ite   : Expr s GBool -> Expr s u -> Expr s u -> Expr s u
+data FunctionType : Type where 
+  Regular    : FunctionType
+  Parametric : FunctionType
+
+public export
+data Expr : (t : FunctionType) -> (s : Schema) -> (u : Universe) -> Type where
+  T     : Expr Parametric [] u
+  X     : Expr Regular [] u
+  ColNr : Expr t s GNat
+  Lit   : (u : Universe) -> (lit : IdrisType u) -> Expr t s u
+  NCol  : (0 _ : Num u) => Sel s u -> Expr t s u
+  SCol  : Sel s GString -> Expr t s GString
+  EFun  : Fun c f -> Expr t s u -> (0 _ : c u) => Expr t s (f u)
+  EOp   : BinOp c f -> Expr t s u -> Expr t s u -> (0 _ : c u) => Expr t s (f u)
+  Ite   : Expr t s GBool -> Expr t s u -> Expr t s u -> Expr t s u
 
 export
-{u : _} -> Num u => Num (Expr s u) where
+{u : _} -> Num u => Num (Expr t s u) where
   fromInteger {u = GNat}   = Lit GNat . fromInteger
   fromInteger {u = GInt}   = Lit GInt . fromInteger
   fromInteger {u = GBits8} = Lit GBits8 . fromInteger
@@ -111,38 +117,28 @@ export
   x * y = EOp Mult x y
 
 export
-{u : _} -> Neg u => Neg (Expr s u) where
+{u : _} -> Neg u => Neg (Expr t s u) where
   x - y    = EOp Minus x y
   negate v = EOp Minus 0 v
 
 export %inline
-(/) : (0 _ : Num u) => Expr s u -> Expr s u -> Expr s GDbl
+(/) : (0 _ : Num u) => Expr t s u -> Expr t s u -> Expr t s GDbl
 x / y = EOp Div x y
 
 export %inline
-FromDouble (Expr s GDbl) where
+FromDouble (Expr t s GDbl) where
   fromDouble = Lit GDbl
 
 export %inline
-FromString (Expr s GString) where
+FromString (Expr t s GString) where
   fromString = Lit GString
 
 export %inline
-(^) : Num u => Expr s u -> Expr s u -> Expr s u
+(^) : Num u => Expr t s u -> Expr t s u -> Expr t s u
 x ^ y = EOp Pow x y
 
-export
-hasVar : Expr s u -> Bool
-hasVar X           = False
-hasVar ColNr       = True
-hasVar (Lit _ _)   = False
-hasVar (NCol _)    = True
-hasVar (SCol _)    = True
-hasVar (EFun _ y)  = hasVar y
-hasVar (EOp _ y z) = hasVar y || hasVar z
-hasVar (Ite x y z) = hasVar x || hasVar y || hasVar z
-
-ip : Expr s u -> String
+ip : Expr t s u -> String
+ip T              = "t"
 ip X              = "x"
 ip ColNr          = "column(0)"
 ip (Lit u lit)    = print u lit
@@ -154,12 +150,11 @@ ip (EOp op x y)   = "(\{ip x}) \{op} (\{ip y})"
 ip (Ite x y z)    = "(\{ip x}) ? (\{ip y}) : (\{ip z})"
 
 export %inline
-Interpolation (Expr s u) where
+Interpolation (Expr t s u) where
   interpolate       = ip
 
 export
-inc : Expr s u -> Expr (h :: s) u
-inc X            = X
+inc : Expr t (x :: s) u -> Expr t (h :: x :: s) u
 inc ColNr        = ColNr
 inc (Lit u lit)  = Lit u lit
 inc (NCol x)     = NCol $ inc x
@@ -178,105 +173,105 @@ infixl 6 `xor`
 infixl 5 .|.
 
 export %inline
-mod : (0 _ : Integral u) => Expr s u -> Expr s u -> Expr s u
+mod : (0 _ : Integral u) => Expr t s u -> Expr t s u -> Expr t s u
 mod x y = EOp Mod x y
 
 export %inline
-shiftL : (0 _ : Integral u) => Expr s u -> Expr s u -> Expr s u
+shiftL : (0 _ : Integral u) => Expr t s u -> Expr t s u -> Expr t s u
 shiftL x y = EOp Shl x y
 
 export %inline
-shiftR : (0 _ : Integral u) => Expr s u -> Expr s u -> Expr s u
+shiftR : (0 _ : Integral u) => Expr t s u -> Expr t s u -> Expr t s u
 shiftR x y = EOp Shr x y
 
 export %inline
-(.&.) : (0 _ : Integral u) => Expr s u -> Expr s u -> Expr s u
+(.&.) : (0 _ : Integral u) => Expr t s u -> Expr t s u -> Expr t s u
 (.&.) x y = EOp And x y
 
 export %inline
-(.|.) : (0 _ : Integral u) => Expr s u -> Expr s u -> Expr s u
+(.|.) : (0 _ : Integral u) => Expr t s u -> Expr t s u -> Expr t s u
 (.|.) x y = EOp Or x y
 
 export %inline
-xor : (0 _ : Integral u) => Expr s u -> Expr s u -> Expr s u
+xor : (0 _ : Integral u) => Expr t s u -> Expr t s u -> Expr t s u
 xor x y = EOp Xor x y
 
 export %inline
-complement : (0 _ : Integral u) => Expr s u -> Expr s u
+complement : (0 _ : Integral u) => Expr t s u -> Expr t s u
 complement x = EFun Compl x
 
 export %inline
-factorial : Expr s GNat -> Expr s GNat
+factorial : Expr t s GNat -> Expr t s GNat
 factorial v = EFun Fact v
 
 export %inline
-ifelse : Expr s GBool -> Expr s u -> Expr s u -> Expr s u
+ifelse : Expr t s GBool -> Expr t s u -> Expr t s u -> Expr t s u
 ifelse = Ite
 
 export %inline
-(==) : (0 _ : Num u) => Expr s u -> Expr s u -> Expr s GBool
+(==) : (0 _ : Num u) => Expr t s u -> Expr t s u -> Expr t s GBool
 (==) x y = EOp Eq x y
 
 export %inline
-(/=) : (0 _ : Num u) => Expr s u -> Expr s u -> Expr s GBool
+(/=) : (0 _ : Num u) => Expr t s u -> Expr t s u -> Expr t s GBool
 (/=) x y = EOp Neq x y
 
 export %inline
-(>=) : (0 _ : Num u) => Expr s u -> Expr s u -> Expr s GBool
+(>=) : (0 _ : Num u) => Expr t s u -> Expr t s u -> Expr t s GBool
 (>=) x y = EOp GTE x y
 
 export %inline
-(<=) : (0 _ : Num u) => Expr s u -> Expr s u -> Expr s GBool
+(<=) : (0 _ : Num u) => Expr t s u -> Expr t s u -> Expr t s GBool
 (<=) x y = EOp LTE x y
 
 export %inline
-(>) : (0 _ : Num u) => Expr s u -> Expr s u -> Expr s GBool
+(>) : (0 _ : Num u) => Expr t s u -> Expr t s u -> Expr t s GBool
 (>) x y = EOp GT x y
 
 export %inline
-(<) : (0 _ : Num u) => Expr s u -> Expr s u -> Expr s GBool
+(<) : (0 _ : Num u) => Expr t s u -> Expr t s u -> Expr t s GBool
 (<) x y = EOp LT x y
 
 export %inline
-(&&) : Expr s GBool -> Expr s GBool -> Expr s GBool
+(&&) : Expr t s GBool -> Expr t s GBool -> Expr t s GBool
 (&&) x y = EOp LAnd x y
 
 export %inline
-(||) : Expr s GBool -> Expr s GBool -> Expr s GBool
+(||) : Expr t s GBool -> Expr t s GBool -> Expr t s GBool
 (||) x y = EOp LOr x y
 
 export %inline
-not : Expr s GBool -> Expr s GBool
+not : Expr t s GBool -> Expr t s GBool
 not x = EFun Not x
 
 export %inline
-sin : (0 _ : Num u) => Expr s u -> Expr s GDbl
+sin : (0 _ : Num u) => Expr t s u -> Expr t s GDbl
 sin x = EFun Sin x
 
 export %inline
-cos : (0 _ : Num u) => Expr s u -> Expr s GDbl
+cos : (0 _ : Num u) => Expr t s u -> Expr t s GDbl
 cos x = EFun Cos x
 
 export %inline
-tan : (0 _ : Num u) => Expr s u -> Expr s GDbl
+tan : (0 _ : Num u) => Expr t s u -> Expr t s GDbl
 tan x = EFun Tan x
 
 export %inline
-exp : (0 _ : Num u) => Expr s u -> Expr s GDbl
+exp : (0 _ : Num u) => Expr t s u -> Expr t s GDbl
 exp x = EFun Exp x
 
 export %inline
-log : (0 _ : Num u) => Expr s u -> Expr s GDbl
+log : (0 _ : Num u) => Expr t s u -> Expr t s GDbl
 log x = EFun Log x
 
 public export %inline
-col : (0 num : Num u) => Sel s u -> Expr s u
+col : (0 num : Num u) => Sel s u -> Expr t s u
 col = NCol
 
 public export %inline
-colNr : Expr s GNat
+colNr : Expr t s GNat
 colNr = ColNr
 
 public export %inline
-strcol : Sel s GString -> Expr s GString
+strcol : Sel s GString -> Expr t s GString
 strcol = SCol
