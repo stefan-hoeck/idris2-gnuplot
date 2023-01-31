@@ -15,62 +15,80 @@ import Gnuplot.Util
 --          Universe
 --------------------------------------------------------------------------------
 
+||| Types supported in Gnuplot expressions
 public export
-data Lit = LInt Integer | LDbl Double
+data Universe : Type where
+  ||| An unsigned integer
+  GNat : Universe
 
+  ||| A signed integer
+  GInt : Universe
+
+  ||| An eight bit value often used when working with RGB colors
+  GBits8 : Universe
+
+  ||| An floating point number
+  GDbl : Universe
+
+  ||| A boolean
+  GBool : Universe
+
+  ||| A string
+  GString : Universe
+
+||| Idris type corresponding to the types known to Gnuplot
 public export
-interface Atom a where
-  toLit : a -> Lit
+0 IdrisType : Universe -> Type
+IdrisType GNat    = Nat
+IdrisType GInt    = Integer
+IdrisType GBits8  = Bits8
+IdrisType GDbl    = Double
+IdrisType GBool   = Bool
+IdrisType GString = String
 
-public export %inline
-Atom Double where
-  toLit = LDbl
+||| Witness that a Gnuplot type is a number
+public export
+data Num : Universe -> Type where
+  NumNat   : Num GNat
+  NumInt   : Num GInt
+  NumBits8 : Num GBits8
+  NumDbl   : Num GDbl
 
-public export %inline
-Atom Integer where
-  toLit = LInt
+||| Witness that a Gnuplot type has an additive inverse
+public export
+data Neg : Universe -> Type where
+  NegInt   : Neg GInt
+  NegBits8 : Neg GBits8
+  NegDbl   : Neg GDbl
 
-public export %inline
-Atom Bits8 where
-  toLit = LInt . cast
+||| Witness that a Gnuplot type is an integer
+public export
+data Integral : Universe -> Type where
+  IntNat   : Integral GNat
+  IntInt   : Integral GInt
+  IntBits8 : Integral GBits8
 
-public export %inline
-Atom Bits16 where
-  toLit = LInt . cast
+public export %hint
+integralIsNum : {0 u : Universe} -> (prf : Integral u) => Num u
+integralIsNum {prf = IntNat}   = NumNat
+integralIsNum {prf = IntInt}   = NumInt
+integralIsNum {prf = IntBits8} = NumBits8
 
-public export %inline
-Atom Bits32 where
-  toLit = LInt . cast
-
-public export %inline
-Atom Bits64 where
-  toLit = LInt . cast
-
-public export %inline
-Atom Int8 where
-  toLit = LInt . cast
-
-public export %inline
-Atom Int16 where
-  toLit = LInt . cast
-
-public export %inline
-Atom Int32 where
-  toLit = LInt . cast
-
-public export %inline
-Atom Int64 where
-  toLit = LInt . cast
-
-public export %inline
-Atom Nat where
-  toLit = LInt . cast
+public export %hint
+negIsNum : {0 u : Universe} -> (prf : Neg u) => Num u
+negIsNum {prf = NegDbl}   = NumDbl
+negIsNum {prf = NegInt}   = NumInt
+negIsNum {prf = NegBits8} = NumBits8
 
 export
-print : Atom a => a -> String
-print v = case toLit v of
-  LInt n => show n
-  LDbl d => show d
+print : (u : Universe) -> IdrisType u -> String
+print GNat x      = show x
+print GInt x      = show x
+print GBits8 x    = show x
+print GDbl x      = show x
+print GBool True  = "1"
+print GBool False = "0"
+print GString x   = quote x
 
 --------------------------------------------------------------------------------
 --          Data Tables
@@ -82,26 +100,17 @@ infixr 8 :>
 public export
 record Column where
   constructor (:>)
-  name   : String
-  0 type : Type
+  name : String
+  type : Universe
 
 public export
 0 ColType : Column -> Type
-ColType = type
-
-public export
-0 ColAtom : Column -> Type
-ColAtom = Atom . ColType
+ColType = IdrisType . type
 
 ||| A table schema
 public export
 0 Schema : Type
 Schema = List Column
-
-||| Proof that all types in a schema are atoms
-public export
-0 Atoms : Schema -> Type
-Atoms = NP ColAtom
 
 ||| A row in a table
 public export
@@ -114,13 +123,13 @@ public export
 Table = List . Row
 
 export
-printRow : (prf : Atoms s) => Row s -> String
+printRow : {s : _} -> Row s -> String
 printRow [] = ""
-printRow {prf = [_]}    [v]       = print v
-printRow {prf = _ :: _} (v :: vs) = print v ++ " " ++ printRow vs
+printRow {s = [c]}    [v]       = print c.type v
+printRow {s = c :: _} (v :: vs) = print c.type v ++ " " ++ printRow vs
 
 export
-printTable : Atoms s => Table s -> String
+printTable : {s : _} -> Table s -> String
 printTable = unlines . map printRow
 
 --------------------------------------------------------------------------------
@@ -129,119 +138,93 @@ printTable = unlines . map printRow
 
 ||| Proof that a column of the given name and type is in the schema.
 public export
-data InSchema : (n : String) -> (cs : Schema) -> (t : Type) -> Type where
+data InSchema : (n : String) -> (cs : Schema) -> (u : Universe) -> Type where
   [search n cs]
-  Here  : InSchema n (n :> t :: cs) t
-  There : InSchema n cs t -> InSchema n (c :: cs) t
+  Here  : InSchema n (n :> u :: cs) u
+  There : InSchema n cs u -> InSchema n (c :: cs) u
 
-toNat : InSchema n cs t -> Nat
+toNat : InSchema n cs u -> Nat
 toNat Here      = 1
 toNat (There p) = S $ toNat p
 
 public export
-columnName : {s : _} -> InSchema n s t -> String
+columnName : {s : _} -> InSchema n s u -> String
 columnName {s = n :> _ :: _} Here      = n
 columnName {s = _ :: _}      (There x) = columnName x
 
 
 ||| Proof that a row with the given (1-based) index in the schema
 public export
-data IxInSchema : (x : Nat) -> (cs : Schema) -> (t : Type) -> Type where
+data IxInSchema : (x : Nat) -> (cs : Schema) -> (u : Universe) -> Type where
   [search x cs]
-  IxHere  : IxInSchema 1 (n :> t :: cs) t
-  IxThere : IxInSchema x cs t -> IxInSchema (S x) (c :: cs) t
+  IxHere  : IxInSchema 1 (n :> u :: cs) u
+  IxThere : IxInSchema x cs u -> IxInSchema (S x) (c :: cs) u
 
 ||| A column in a Schema, selected by name
 public export
-record Sel (s : Schema) (t : Type) where
+record Sel (s : Schema) (u : Universe) where
   constructor MkSel
   0 name : String
-  prf    : InSchema name s t
+  prf    : InSchema name s u
 
 public export
-inc : Sel s t -> Sel (c :: s) t
+inc : Sel s u -> Sel (c :: s) u
 inc (MkSel n p) = MkSel n (There p)
 
 public export
-colName : {s : _} -> Sel s t -> String
+colName : {s : _} -> Sel s u -> String
 colName sel = columnName sel.prf
 
 export
-Interpolation (Sel s t) where
+Interpolation (Sel s u) where
   interpolate (MkSel _ p) = show $ toNat p
 
 public export
-fromIndex : IxInSchema x s t -> Sel s t
+fromIndex : IxInSchema x s u -> Sel s u
 fromIndex IxHere      = MkSel _ Here
 fromIndex (IxThere y) = let MkSel n p = fromIndex y in MkSel n (There p)
 
 ||| We can conveniently select columns by name
 ||| using string literals.
 public export
-fromString : (0 n : String) -> (prf : InSchema n s t) => Sel s t
+fromString : (0 n : String) -> (prf : InSchema n s u) => Sel s u
 fromString n = MkSel n prf
 
 ||| We can conveniently select columns by name
 ||| using integer literals.
 public export
 fromInteger :  (0 x : Integer)
-            -> (prf : IxInSchema (cast x) s t)
-            => Sel s t
+            -> (prf : IxInSchema (cast x) s u)
+            => Sel s u
 fromInteger _ = fromIndex prf 
-
-namespace Selection
-  ||| A selection of columns in a table.
-  public export
-  data Selection : (s : Schema) -> List Type -> Type where
-    Nil  : Selection s []
-    (::) : Sel s t -> Selection s ts -> Selection s (t :: ts)
-
-export
-Interpolation (Selection s ts) where
-  interpolate []       = ""
-  interpolate [x]      = interpolate x
-  interpolate (h :: t) = "\{h}:\{t}"
-
-public export
-0 SchemaTypes : Schema -> List Type
-SchemaTypes []        = []
-SchemaTypes (_ :> t :: cs) = t :: SchemaTypes cs
 
 --------------------------------------------------------------------------------
 --          Creating Tables
 --------------------------------------------------------------------------------
 
 export
-functions :  List a
-          -> NP_ Column (\c => a -> c.type) cs
-          -> Table (n :> a :: cs)
-functions xs fs = map (\v =>  v :: mapNP ($ v) fs) xs
+functions :  (u : Universe)
+          -> List (IdrisType u)
+          -> NP_ Column (\c => IdrisType u -> ColType c) cs
+          -> Table (n :> u :: cs)
+functions u xs fs = map (\v =>  v :: mapNP ($ v) fs) xs
 
 export
 param :  List a
-      -> NP_ Column (\c => a -> c.type) cs
+      -> NP_ Column (\c => a -> ColType c) cs
       -> Table cs
 param xs fs = map (\v => mapNP ($ v) fs) xs
 
 --------------------------------------------------------------------------------
---          Example
+--          Examples
 --------------------------------------------------------------------------------
 
-Prices : Schema
-Prices = ["Year" :> Bits16, "PQR" :> Bits32, "XYZ" :> Bits32]
-
-columnsByName : Selection Prices [Bits16, Bits32]
-columnsByName = ["Year", "XYZ"]
-
-columnsByIndex : Selection Prices [Bits16, Bits32]
-columnsByIndex = [1,3]
-
-trigTable : Table [ "x"      :> Double
-                  , "sin(x)" :> Double
-                  , "cos(x)" :> Double
-                  , "tan(x)" :> Double
+trigTable : Table [ "x"      :> GDbl
+                  , "sin(x)" :> GDbl
+                  , "cos(x)" :> GDbl
+                  , "tan(x)" :> GDbl
                   ]
-trigTable = functions (linear 2000 (-4*pi) (4*pi)) [sin,cos,tan]
+trigTable = functions GDbl (linear 2000 (-4*pi) (4*pi)) [sin,cos,tan]
 
-circle : Table ["x" :> Double, "y" :> Double]
+circle : Table ["x" :> GDbl, "y" :> GDbl]
 circle = param (linear 2000 (- pi) pi) [sin,cos]

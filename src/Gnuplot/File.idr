@@ -1,11 +1,11 @@
 module Gnuplot.File
 
-import public Data.FilePath
+import public Data.FilePath.File
 
 %default total
 
 public export
 record GPFile where
   constructor MkFile
-  path    : Path Abs
+  path    : File Abs
   content : String

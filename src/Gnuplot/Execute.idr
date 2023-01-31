@@ -37,7 +37,7 @@ writeGP (MkFile p c) = do
 gnuplotDir : Path Abs -> Path Abs
 gnuplotDir dir = dir /> ".gnuplot"
 
-curveFile : Path Abs -> Path Abs
+curveFile : Path Abs -> File Abs
 curveFile dir = dir /> "curve.gp"
 
 export
@@ -54,7 +54,7 @@ withTempDir dir run =
 export
 withTempFile :  PlotEnv xs
              => (dir : Path Abs)
-             -> (run : Path Abs -> App xs a)
+             -> (run : File Abs -> App xs a)
              -> App xs a
 withTempFile dir run =
   let cfile = curveFile dir
@@ -97,10 +97,22 @@ handlers = [ \e => error (printErr e)
            ]
 
 export
-run : ToScript a => Terminal t -> a -> IO ()
-run term plot =
-  let console = stdIO
+run_ : ToScript a => LogLevel -> Terminal t -> a -> IO ()
+run_ lvl term plot =
+  let console = stdOut
       fs      = File.local
       sys     = Sys.system
-      log     = filter Info (colorConsoleLogger console)
+      log     = filter lvl (colorConsoleLogger console)
    in runApp handlers $ runScript term plot
+
+export %inline
+run : ToScript a => Terminal t -> a -> IO ()
+run = run_ Info
+
+export %inline
+debug : ToScript a => Terminal t -> a -> IO ()
+debug = run_ Debug
+
+export %inline
+trace : ToScript a => Terminal t -> a -> IO ()
+trace = run_ Trace

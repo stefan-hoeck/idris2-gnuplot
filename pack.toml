@@ -1,14 +1,21 @@
 [custom.all.gnuplot]
-type   = "local"
-path   = "."
-ipkg   = "gnuplot.ipkg"
+type = "local"
+path = "."
+ipkg = "gnuplot.ipkg"
 
 [custom.all.gnuplot-example]
-type   = "local"
-path   = "example"
-ipkg   = "example.ipkg"
+type = "local"
+path = "example"
+ipkg = "example.ipkg"
 
 [custom.all.rio]
-type   = "local"
-path   = "../rio"
+type   = "git"
+url    = "https://github.com/stefan-hoeck/idris2-rio"
+commit = "latest:main"
 ipkg   = "rio.ipkg"
+
+[custom.all.filepath]
+type   = "git"
+url    = "https://github.com/stefan-hoeck/idris2-filepath"
+commit = "latest:main"
+ipkg   = "filepath.ipkg"

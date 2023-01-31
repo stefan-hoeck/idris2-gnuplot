@@ -19,24 +19,24 @@ handlers = [ \e => error (printErr e)
 
 run : ToScript a => a -> IO ()
 run plot =
-  let console = stdIO
+  let console = stdOut
       fs      = File.local
       sys     = Sys.system
-      log     = filter Debug (colorConsoleLogger console)
+      log     = filter Trace (colorConsoleLogger console)
    in runApp handlers $ runScript (SVG "test.svg") plot
 
 --------------------------------------------------------------------------------
 --          Plot Examples
 --------------------------------------------------------------------------------
 
-trigs : Table [ "x"            :> Double
-              , "sin(x)"       :> Double
-              , "cos(x)"       :> Double
-              , "tan(x)"       :> Double
-              , "exp(x)"       :> Double
-              , "3 * exp(1/x)" :> Double
+trigs : Table [ "x"            :> GDbl
+              , "sin(x)"       :> GDbl
+              , "cos(x)"       :> GDbl
+              , "tan(x)"       :> GDbl
+              , "exp(x)"       :> GDbl
+              , "3 * exp(1/x)" :> GDbl
               ]
-trigs = functions (linear 4000 (-2*pi) (2*pi))
+trigs = functions GDbl (linear 4000 (-2*pi) (2*pi))
           [ sin
           , cos
           , tan
@@ -44,19 +44,19 @@ trigs = functions (linear 4000 (-2*pi) (2*pi))
           , \x => if abs x < 0.0001 then 0 else 0.3 * exp (1 / x)
           ]
 
-sinCosTan : Frame2D Double Double
+sinCosTan : Frame2D GDbl GDbl
 sinCosTan = frame
-  [ yrange .= (-2, 2)
-  , xlabel .= "x"
-  , ylabel .= "y"
+  [ yrange (-2) 2
+  , xlabel "x"
+  , ylabel "y"
   ] $
   fromTable trigs
-    [ titled Lines [1,2]
-    , titled Lines [1,3]
-    , titled Lines [1,4]
-    , titled Lines [1,5]
-    , titled Lines [1,6]
-    ]
+  [ titled Lines [col 1,col 2]
+  , titled Lines [col 1,col 3]
+  , titled Lines [col 1,col 4]
+  , titled Lines [col 1,col 5]
+  , titled Lines [col 1,col 6]
+  ]
 
 --------------------------------------------------------------------------------
 --          Plot Examples

@@ -60,3 +60,6 @@ linear n x0 x1 =
   let n'   = the a (fromInteger $ cast n)
       diff = x1 - x0
    in fromIx (S n) (\x => x0 + (fromInteger $ cast x) * diff / n')
+
+export %inline
+Interpolation Nat where interpolate = show
