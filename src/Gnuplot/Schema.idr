@@ -158,14 +158,14 @@ public export
 data IxInSchema : (x : Nat) -> (cs : Schema) -> (u : Universe) -> Type where
   [search x cs]
   IxHere  : IxInSchema 1 (n :> u :: cs) u
-  IxThere : IxInSchema x cs t -> IxInSchema (S x) (c :: cs) u
+  IxThere : IxInSchema x cs u -> IxInSchema (S x) (c :: cs) u
 
 ||| A column in a Schema, selected by name
 public export
 record Sel (s : Schema) (u : Universe) where
   constructor MkSel
   0 name : String
-  prf    : InSchema name s t
+  prf    : InSchema name s u
 
 public export
 inc : Sel s u -> Sel (c :: s) u

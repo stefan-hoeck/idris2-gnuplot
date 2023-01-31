@@ -7,8 +7,7 @@ readme     = "README.md"
 license    = "BSD-3 Clause"
 
 sourcedir  = "src"
-depends    = base    >= 0.5.1
-           , contrib
+depends    = base    >= 0.6.0
            , sop
            , rio
            , filepath

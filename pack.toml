@@ -7,3 +7,15 @@ ipkg = "gnuplot.ipkg"
 type = "local"
 path = "example"
 ipkg = "example.ipkg"
+
+[custom.all.rio]
+type   = "git"
+url    = "https://github.com/stefan-hoeck/idris2-rio"
+commit = "latest:main"
+ipkg   = "rio.ipkg"
+
+[custom.all.filepath]
+type   = "git"
+url    = "https://github.com/stefan-hoeck/idris2-filepath"
+commit = "latest:main"
+ipkg   = "filepath.ipkg"
