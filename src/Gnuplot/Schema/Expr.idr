@@ -5,7 +5,7 @@ import Gnuplot.Util
 
 %default total
 
-infixr 10 ^
+export infixr 10 ^
 
 public export
 0 I : Universe -> Universe
@@ -167,10 +167,10 @@ inc (Ite x y z)  = Ite (inc x) (inc y) (inc z)
 --          Syntax
 --------------------------------------------------------------------------------
 
-infixl 8 `shiftL`, `shiftR`
-infixl 7 .&.
-infixl 6 `xor`
-infixl 5 .|.
+export infixl 8 `shiftL`, `shiftR`
+export infixl 7 .&.
+export infixl 6 `xor`
+export infixl 5 .|.
 
 export %inline
 mod : (0 _ : Integral u) => Expr t s u -> Expr t s u -> Expr t s u

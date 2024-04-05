@@ -94,7 +94,7 @@ print GString x   = quote x
 --          Data Tables
 --------------------------------------------------------------------------------
 
-infixr 8 :>
+export infixr 8 :>
 
 ||| A single column in a schema
 public export
